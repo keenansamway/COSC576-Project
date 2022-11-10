@@ -2,14 +2,12 @@
 ###### Aesthetic Image Captioning For Photography Critique
 
 
-**1 Task**
-
+**1 Task**<br>
 Through this project, we will explore the potential for image captioning models to provide substantive critique of photographers images. Aesthetic Image Captioning (AIC), sometimes also referred to as Aesthetic Critique Captioning, is the process of producing a caption critiquing an image. Where standard Image Captioning will take an image as input, and output a caption describing the contents of that image, AIC will similarly take an image as input, but then produce a caption critiquing the aesthetic quality of that image.  This task can be utilized in applications like aesthetics-based image enhancement and photography cameras.
 
 One of the challenges of this task is the quality of data that the models are to be trained on. When it comes to standard Image Captioning, images can be fairly grounded in an observable ground truth. While a single image may be described in multiple different ways, there is no disputing what is in that image. When it comes to AIC however, people’s subjective critiques are much more visible. One person may like an image for a particular reason, while another person may dislike the photo for that same reason. When there is not enough data to smooth out the variance in these critiques, the dataset may become noisy, causing the model to not perform as well as it could. In this regard, the task at hand will be twofold. Simply developing a powerful model alone will not be sufficient, but a good dataset will need to be used in conjunction with a good model to produce effective results in the field of Aesthetic Image Captioning. 
 
-**2 Literature Search**
-
+**2 Literature Search**<br>
 The literature search that follows will be separated into 2 major sections. The first section will discuss research in the task of standard Image Captioning and explore some of the standout moments of the field. The second section will discuss research in applying this task to Aesthetic Image Analysis to result in the field of Aesthetic Image Captioning. 
 
 <ins>Image Captioning</ins><br>
@@ -28,8 +26,7 @@ The second paper called Aesthetic Image Captioning From Weakly-Labelled Photogra
 
 The most recent paper called Understanding Aesthetics with Language and was released in 2022 and proposed a novel dataset called the Reddit Photo Critique Dataset (RPCD). It contains ~70K images and ~220K filtered and cleaned comments retrieved from a photo critiquing subreddit. The authors attempted to use the dataset in the task of AIC by utilizing a model called BLIP. However, they mentioned that it performed significantly worse on Aesthetic Critique Captioning than it did on standard Image Captioning datasets and that it should be an area for further research in the future.
 
-**3 Data**
-
+**3 Data**<br>
 In our task, we will consider multiple datasets which contain images and an arbitrary number of caption pairs corresponding to each image. As the datasets vary in both size and quality/noisiness of the data, they are likely to have an impact on model performance. It will therefore be useful to try multiple to allow us to better train and tune a model that can better generalize to the task of Aesthetic Image Captioning.
 
 One dataset that we will use is the Photo Critique Captioning Dataset (PCCD) released along with the 2017 seminal paper in Aesthetic Image Captioning. This dataset contains pairwise data of images and critiques on different aspects of ~4K images and over 60K comments. As the author’s mention in the paper that it was the first publicly available dataset in the photo aesthetics captioning field and as it is constructed from professional photographers comments on users photos, it should be fairly free of noise.
@@ -38,8 +35,7 @@ The next dataset that we will try out is the AVA-Captions dataset. AVA-Captions 
 
 The final and potentially one of the most promising datasets we will try is the Reddit Photo Critique Dataset (RPCD) which contains ~74K images and ~220K comments. Compared with previous datasets like AVA and its successors, this dataset generally contains higher definition photos as well as longer and more informative comments.
 
-**4 Strategy**
-
+**4 Strategy**<br>
 For this task, we need our training data to be such that each image is associated with a set of comments critiquing the image. Tasks mentioned in the literature create or use existing datasets where there is a strong correlation between the visual features of a given image and its accompanying comments. The existing datasets have been preprocessed and cleaned of noisy comments. Moreover, they have been formatted in such a way that each image is associated with k comments. Hence, we will leverage those datasets.
 
 Previous Image Aesthetic Captioning tasks have relied on a CNN-RNN/LSTM combination to train a model that outputs aesthetic critics of an image or some score related to the image's aesthetic attributes. For training, a CNN is used to extract image features which together with the accompanying comments are fed into the LSTM to predict the image aesthetic caption/critique. 
@@ -50,6 +46,5 @@ CNN does not encode the relative position of different features when small filte
 
 Note that ViT requires training on large datasets to outperform CNN. Since we do not know yet how much data will be needed to reach our desired accuracy, we will experiment with a mix of CNN and ViT aka ConViT which uses convolutions in early layers and self-attention in later layers.
  
-**5 Team Members**
-
+**5 Team Members**<br>
 There will be three of us working together on this project: Didier Akilimali, Hanouf Aljlayl, and Keenan Samway.
