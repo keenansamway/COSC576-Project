@@ -30,7 +30,7 @@ def train():
     torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")           ## Nvidia CUDA Acceleration
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")    ## Apple M1 Metal Acceleration
-    load_model = True
+    load_model = False
     save_model = True
     train_CNN = False
     # True False
@@ -41,7 +41,7 @@ def train():
     vocab_siez = len(dataset.vocab)
     num_layers = 1
     learning_rate = 3e-4
-    num_epochs = 50
+    num_epochs = 10
     
     # initialize model, loss, etc
     model = CNNtoLSTM(

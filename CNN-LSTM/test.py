@@ -10,7 +10,7 @@ from model import CNNtoLSTM
 
 def test():
     
-    path = "CNN-LSTM/runs/PCCD_v2/checkpoint.pth.tar"
+    path = "CNN-LSTM/runs/checkpoint.pth.tar"
     
     transform = transforms.Compose(
         [

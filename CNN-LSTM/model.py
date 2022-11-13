@@ -13,7 +13,7 @@ class EncoderCNN(nn.Module):
         self.resnet.fc = nn.Linear(self.resnet.fc.in_features, embed_size)
         
         self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.0)
         
     def forward(self, images):
         features = self.resnet(images)
@@ -28,7 +28,7 @@ class DecoderLSTM(nn.Module):
         self.embed = nn.Embedding(vocab_size, embed_size)
         self.lstm = nn.LSTM(embed_size, hidden_size, num_layers)
         self.linear = nn.Linear(hidden_size, vocab_size)
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(0.0)
         
     def forward(self, features, captions):
         embeddings = self.embed(captions)
