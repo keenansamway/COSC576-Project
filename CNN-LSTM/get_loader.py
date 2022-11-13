@@ -48,9 +48,9 @@ class Vocabulary:
 
 # class PCCD(Dataset):
 class PCCD(Dataset):
-    def __init__(self, root_dir, captions_file, transform=None, freq_threshold=5):
-        self.root_dir = root_dir
-        self.df = pd.read_csv(captions_file)
+    def __init__(self, imgs_dir, captions_file, transform=None, freq_threshold=5):
+        self.imgs_dir = imgs_dir
+        self.df = pd.read_json(captions_file)
         self.transform = transform
         
         self.df["general_impression"] = self.df["general_impression"].fillna("")
@@ -69,7 +69,7 @@ class PCCD(Dataset):
     def __getitem__(self, index):
         caption = self.captions[index]
         img_id = self.imgs[index]
-        img = Image.open(os.path.join(self.root_dir, img_id)).convert("RGB")
+        img = Image.open(os.path.join(self.imgs_dir, img_id)).convert("RGB")
         
         if self.transform is not None:
             img = self.transform(img)
@@ -96,9 +96,9 @@ class MyCollate:
 
 
 # def get_loader()
-def get_loader(root_folder, annotation_file, transform, batch_size=32, num_workers=8, shuffle=True, pin_memory=True):
+def get_loader(imgs_folder, annotation_file, transform, batch_size=32, num_workers=8, shuffle=True, pin_memory=True):
     
-    dataset = PCCD(root_folder, annotation_file, transform=transform)
+    dataset = PCCD(imgs_folder, annotation_file, transform=transform)
     
     pad_idx = dataset.vocab.stoi["<PAD>"]
     
@@ -118,11 +118,12 @@ def get_loader(root_folder, annotation_file, transform, batch_size=32, num_worke
 if __name__ == "__main__":
     transform = transforms.Compose([transforms.Resize((224,224)), transforms.ToTensor()])
     
-    images_dir = "datasets/PCCD/images/full"
+    imgs_dir = "datasets/PCCD/images/full"
     captions_file = "datasets/PCCD/raw.csv"
 
-    loader, dataset = get_loader(images_dir, captions_file, transform=transform)
+    loader, dataset = get_loader(imgs_dir, captions_file, transform=transform)
    
+    
     for idx, (imgs, captions) in enumerate(loader):
         print(imgs.shape)
         print(captions.shape)
