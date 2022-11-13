@@ -4,7 +4,7 @@ import pandas as pd
 from PIL import Image
 import torchvision.transforms as transforms
 
-def save_checkpoint(state, filename="CNN-LSTM/checkpoint.pth.tar"):
+def save_checkpoint(state, filename="CNN-LSTM/runs/checkpoint.pth.tar"):
     print("-- Saving Checkpoint --")
     torch.save(state, filename)
     

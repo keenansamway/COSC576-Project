@@ -9,8 +9,6 @@ from utils import print_examples, save_checkpoint, load_checkpoint
 from get_loader import get_loader
 from model import CNNtoLSTM
 
-
-# def train():
 def train():
     transform = transforms.Compose(
         [
@@ -32,10 +30,10 @@ def train():
     torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")           ## Nvidia CUDA Acceleration
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")    ## Apple M1 Metal Acceleration
-    test_model = True
     load_model = True
     save_model = True
     train_CNN = False
+    # True False
     
     # Hyperparameters
     embed_size = 256
@@ -43,11 +41,7 @@ def train():
     vocab_siez = len(dataset.vocab)
     num_layers = 1
     learning_rate = 3e-4
-    num_epochs = 1
-    
-    # for tensorboard
-    writer = SummaryWriter("CNN-LSTM/runs/PCCD")
-    step = 0
+    num_epochs = 50
     
     # initialize model, loss, etc
     model = CNNtoLSTM(
@@ -59,7 +53,7 @@ def train():
     
     criterion = nn.CrossEntropyLoss(ignore_index=dataset.vocab.stoi["<PAD>"])
     
-    optimizer = optim.Adam(model.parameters(), lr=learning_rate)
+    #optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
     
     for name, param in model.encoder.resnet.named_parameters():
@@ -67,15 +61,18 @@ def train():
             param.requires_grad = True
         else:
             param.requires_grad = train_CNN
+            
+    # for tensorboard
+    writer = SummaryWriter("CNN-LSTM/runs/PCCD")
+    step = 0
+    
     
     if load_model:
-        step = load_checkpoint(torch.load("CNN-LSTM/checkpoint.pth.tar"), model, optimizer)
+        step = load_checkpoint(torch.load("CNN-LSTM/runs/checkpoint.pth.tar"), model, optimizer)
         
     model.train()
     
-    if test_model:
-        print_examples(model, device, dataset)
-        sys.exit()
+    # for tensorboard
     
     for epoch in range(num_epochs):
         if save_model:
@@ -100,6 +97,5 @@ def train():
             loss.backward(loss)
             optimizer.step()
 
-#if __name__ == "__main__":
 if __name__ == "__main__":
     train()

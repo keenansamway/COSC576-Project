@@ -119,7 +119,7 @@ if __name__ == "__main__":
     transform = transforms.Compose([transforms.Resize((224,224)), transforms.ToTensor()])
     
     imgs_dir = "datasets/PCCD/images/full"
-    captions_file = "datasets/PCCD/raw.csv"
+    captions_file = "datasets/PCCD/raw.json"
 
     loader, dataset = get_loader(imgs_dir, captions_file, transform=transform)
    

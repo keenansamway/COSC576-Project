@@ -33,9 +33,9 @@ class DecoderLSTM(nn.Module):
     def forward(self, features, captions):
         embeddings = self.embed(captions)
         embeddings = self.dropout(embeddings)
-        embeddings = torch.cat((features.unsqueeze(0), embeddings), dim=0)
+        packed = torch.cat((features.unsqueeze(0), embeddings), dim=0)
         
-        hiddens, _ = self.lstm(embeddings)
+        hiddens, _ = self.lstm(packed)
         outputs = self.linear(hiddens)
         return outputs
 
@@ -55,16 +55,16 @@ class CNNtoLSTM(nn.Module):
         result_caption = []
         
         with torch.no_grad():
-            x = self.encoder(image).unsqueeze(0)
+            inputs = self.encoder(image).unsqueeze(0)
             states = None
             
             for _ in range(max_length):
-                hiddens, states = self.decoder.lstm(x, states)
-                output = self.decoder.linear(hiddens.squeeze(0))
-                predicted = torch.argmax(output, dim=1)
+                hiddens, states = self.decoder.lstm(inputs, states)     # hiddens: ()
+                output = self.decoder.linear(hiddens.squeeze(0))        # outputs: ()
+                predicted = torch.argmax(output, dim=1)                 # predicted: ()
                 
                 result_caption.append(predicted.item())
-                x = self.decoder.embed(predicted).unsqueeze(0)
+                inputs = self.decoder.embed(predicted).unsqueeze(0)     # input: ()
                 
                 if vocabulary.itos[predicted.item()] == "<EOS>":
                     break
