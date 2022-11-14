@@ -14,10 +14,10 @@ def train():
     embed_size = 256
     hidden_size = 256
     num_layers = 1
-    learning_rate = 3e-4
-    batch_size = 32
+    learning_rate = 3e-2
+    batch_size = 128
     num_workers = 2
-    num_epochs = 5
+    num_epochs = 10
     
     load_model = False
     save_model = True
@@ -37,8 +37,8 @@ def train():
         imgs_folder="datasets/PCCD/images/full",
         annotation_file="datasets/PCCD/raw.json",
         transform=transform,
-        batch_size=32,
-        num_workers=2,
+        batch_size=batch_size,
+        num_workers=num_workers,
     )
     vocab_size = len(dataset.vocab)
     
@@ -100,6 +100,8 @@ def train():
             optimizer.zero_grad()
             loss.backward(loss)
             optimizer.step()
+
+    print("Epoch [{}/[{}], Loss: {:.4f}".format(epoch+1, num_epochs, loss.item()))
 
 if __name__ == "__main__":
     train()
