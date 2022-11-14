@@ -84,31 +84,19 @@ class CNNtoLSTM(nn.Module):
             # image: (3, 224, 224)
             
             inputs = self.encoder(image)                                    # inputs: (batch_size=1, embed_size)
-            print(inputs.size())
-
-            inputs = inputs.unsqueeze(0)                                    # inputs: (1, batch_size=1, embed_size)
-            print(inputs.size())
-            
+            inputs = inputs.unsqueeze(0)                                    # inputs: (1, batch_size=1, embed_size)            
             hidden = None
             
             for _ in range(max_length):
                 lstm_out, hidden = self.decoder.lstm(inputs, hidden)        # lstm_out: (1, batch_size=1, hidden_size)
-                #print(lstm_out.size())
-                
                 output = self.decoder.linear(lstm_out.squeeze(0))           # output: (1, batch_size=1, vocab_size)
-                #print(output.size())
                 
                 predicted = torch.argmax(output, dim=1)                     # predicted: (batch_size=1)
-                #print(predicted.size())
-                
                 result_caption.append(predicted.item())
                 
                 inputs = self.decoder.word_embedding(predicted)             # input: (batch_size=1, embed_size)
-                #print(inputs.size())
-                
                 inputs = inputs.unsqueeze(0)                                # input: (1, batch_size=1, embed_size)
-                #print(inputs.size())
-                #sys.exit()
+
                 if vocabulary.itos[predicted.item()] == "<EOS>":
                     break
                 

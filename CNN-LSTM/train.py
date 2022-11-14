@@ -32,8 +32,8 @@ def train():
     num_epochs = 2
     
     
-    load_model = False
-    save_model = False
+    load_model = True
+    save_model = True
     train_CNN = False
     # True False
     
