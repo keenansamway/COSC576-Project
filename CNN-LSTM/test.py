@@ -9,6 +9,14 @@ from model import CNNtoLSTM
 
 
 def test():
+    # Hyperparameters
+    embed_size = 256
+    hidden_size = 256
+    num_layers = 1
+    learning_rate = 3e-4
+    batch_size = 32
+    num_workers = 2
+    num_epochs = 5
     
     path = "CNN-LSTM/runs/checkpoint.pth.tar"
     
@@ -28,16 +36,10 @@ def test():
         batch_size=32,
         num_workers=2,
     )
-    
+    vocab_siez = len(dataset.vocab)
+
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")           ## Nvidia CUDA Acceleration
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")    ## Apple M1 Metal Acceleration
-    
-    # Hyperparameters
-    embed_size = 256
-    hidden_size = 256
-    vocab_siez = len(dataset.vocab)
-    num_layers = 1
-    learning_rate = 3e-4
 
     # initialize model, loss, etc
     model = CNNtoLSTM(

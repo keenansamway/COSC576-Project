@@ -10,6 +10,20 @@ from get_loader import get_loader
 from model import CNNtoLSTM
 
 def train():
+    # Hyperparameters
+    embed_size = 256
+    hidden_size = 256
+    num_layers = 1
+    learning_rate = 3e-4
+    batch_size = 32
+    num_workers = 2
+    num_epochs = 5
+    
+    load_model = False
+    save_model = True
+    train_CNN = False
+    # True False
+    
     transform = transforms.Compose(
         [
             transforms.Resize((356,356)),
@@ -26,28 +40,18 @@ def train():
         batch_size=32,
         num_workers=2,
     )
+    vocab_size = len(dataset.vocab)
     
     torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")           ## Nvidia CUDA Acceleration
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")    ## Apple M1 Metal Acceleration
-    load_model = False
-    save_model = True
-    train_CNN = False
-    # True False
     
-    # Hyperparameters
-    embed_size = 256
-    hidden_size = 256
-    vocab_siez = len(dataset.vocab)
-    num_layers = 1
-    learning_rate = 3e-4
-    num_epochs = 10
     
     # initialize model, loss, etc
     model = CNNtoLSTM(
         embed_size=embed_size, 
         hidden_size=hidden_size, 
-        vocab_size=vocab_siez,
+        vocab_size=vocab_size,
         num_layers=num_layers,
         ).to(device)
     
