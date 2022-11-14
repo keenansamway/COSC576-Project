@@ -7,20 +7,33 @@ from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
 from utils import print_examples, save_checkpoint, load_checkpoint
 from get_loader import get_loader
+from torch.nn.utils.rnn import pad_sequence
 from model import CNNtoLSTM
+
+"""
+
+Used code from:
+https://github.com/aladdinpersson/Machine-Learning-Collection/tree/master/ML/Pytorch/more_advanced/image_captioning
+https://github.com/yunjey/pytorch-tutorial/tree/master/tutorials/03-advanced/image_captioning
+https://github.com/rammyram/image_captioning/blob/master/Image_Captioning.ipynb
+
+PyTorch has an issue with the backwards pass in LSTM when using batch first on MPS (Apple M1) device
+"""
 
 def train():
     # Hyperparameters
     embed_size = 256
     hidden_size = 256
     num_layers = 1
-    learning_rate = 3e-2
-    batch_size = 128
+    learning_rate = 3e-4
+    batch_size = 32
     num_workers = 2
-    num_epochs = 10
+    dropout = 0.5
+    num_epochs = 2
+    
     
     load_model = False
-    save_model = True
+    save_model = False
     train_CNN = False
     # True False
     
@@ -53,6 +66,7 @@ def train():
         hidden_size=hidden_size, 
         vocab_size=vocab_size,
         num_layers=num_layers,
+        dropout=dropout,
         ).to(device)
     
     criterion = nn.CrossEntropyLoss(ignore_index=dataset.vocab.stoi["<PAD>"])
@@ -61,13 +75,11 @@ def train():
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
     
     for name, param in model.encoder.resnet.named_parameters():
-        if "fc.weight" in name or "fc.bias" in name:
-            param.requires_grad = True
-        else:
-            param.requires_grad = train_CNN
+        param.requires_grad = train_CNN
             
     # for tensorboard
-    writer = SummaryWriter("CNN-LSTM/runs/PCCD")
+    if save_model:
+        writer = SummaryWriter("CNN-LSTM/runs/PCCD")
     step = 0
     
     
@@ -88,14 +100,27 @@ def train():
             save_checkpoint(checkpoint)
         
         for idx, (imgs, captions) in tqdm(enumerate(train_loader), total=len(train_loader), leave=True):
+            #print(f"imgs size: {imgs.size()}")
+            #print(f"captions size: {captions.size()}")
+            #sys.exit()
             imgs = imgs.to(device)
             captions = captions.to(device)
             
-            outputs = model(imgs, captions[:-1])
-            loss = criterion(outputs.reshape(-1, outputs.shape[2]), captions.reshape(-1))
+            outputs = model(imgs, captions)
+            #print(f"outputs size: {outputs.size()}")
+                        
+            captions = captions.reshape(-1)
+            #print(f"captions size: {captions.size()}")
             
-            writer.add_scalar("Training loss", loss.item(), global_step=step)
-            step += 1
+            outputs = outputs.reshape(-1, outputs.shape[2])
+            #print(f"outputs size: {outputs.size()}")
+                        
+            #sys.exit()
+            loss = criterion(outputs, captions)
+            
+            if save_model:
+                writer.add_scalar("Training loss", loss.item(), global_step=step)
+                step += 1
             
             optimizer.zero_grad()
             loss.backward(loss)

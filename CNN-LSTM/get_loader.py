@@ -71,13 +71,16 @@ class PCCD(Dataset):
         img_id = self.imgs[index]
         img = Image.open(os.path.join(self.imgs_dir, img_id)).convert("RGB")
         
+        #print(caption)
+        
         if self.transform is not None:
             img = self.transform(img)
             
         numericalized_caption = [self.vocab.stoi["<SOS>"]]
         numericalized_caption += self.vocab.numericalize(caption)
         numericalized_caption.append(self.vocab.stoi["<EOS>"])
-        
+        #print(numericalized_caption)
+        #print("\n\n\n")
         return img, torch.tensor(numericalized_caption)
     
 
@@ -87,10 +90,10 @@ class MyCollate:
         self.pad_idx = pad_idx
         
     def __call__(self, batch):
-        imgs = [item[0].unsqueeze(0) for item in batch]
-        imgs = torch.cat(imgs, dim=0)
-        targets = [item[1] for item in batch]
-        targets = pad_sequence(targets, batch_first=False, padding_value=self.pad_idx)
+        imgs = [item[0] for item in batch]
+        imgs = torch.stack(imgs, dim=0)
+        captions = [item[1] for item in batch]
+        targets = pad_sequence(captions, batch_first=False, padding_value=self.pad_idx)
         
         return imgs, targets
 

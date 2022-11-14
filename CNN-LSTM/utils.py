@@ -1,4 +1,4 @@
-import os
+import os, sys
 import torch
 import pandas as pd
 from PIL import Image
@@ -38,7 +38,6 @@ def print_examples(model, device, dataset):
         dir = os.path.join(images_loc, dir)
         test_img = transform(Image.open(dir).convert("RGB")).unsqueeze(0)
         print(f"Example {i} OUTPUT: " + " ".join(model.caption_image(test_img.to(device), dataset.vocab)))
-    
     model.train()
     
 if __name__ == "__main__":

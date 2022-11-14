@@ -3,3 +3,4 @@ flickr8k
 .DS_Store
 runs
 __pycache__
+CNN-LSTM-v1
