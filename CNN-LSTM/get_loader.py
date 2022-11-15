@@ -105,9 +105,9 @@ class MyCollate:
 
 
 # def get_loader()
-def get_loader(imgs_folder, annotation_file, transform, batch_size=32, num_workers=8, frequ_threshold=5, shuffle=True, pin_memory=True):
+def get_loader(imgs_folder, annotation_file, transform, batch_size=32, num_workers=8, freq_threshold=5, shuffle=True, pin_memory=True):
     
-    dataset = PCCD(imgs_folder, annotation_file, transform=transform, freq_threshold=frequ_threshold)
+    dataset = PCCD(imgs_folder, annotation_file, transform=transform, freq_threshold=freq_threshold)
     
     pad_idx = dataset.vocab.stoi["<PAD>"]
     
@@ -130,11 +130,19 @@ if __name__ == "__main__":
     imgs_dir = "datasets/PCCD/images/full"
     captions_file = "datasets/PCCD/raw.json"
 
-    loader, dataset = get_loader(imgs_dir, captions_file, transform=transform)
+    loader, dataset = get_loader(imgs_dir, captions_file, freq_threshold=5, transform=transform)
     
+    # for i in range(50):
+    #     print(dataset.vocab.itos[i])
+    #     print(dataset.vocab.itos[len(dataset.vocab)-1-i])
+    
+    print(dataset.imgs)
+    
+    '''
     for idx, (imgs, captions, lengths) in enumerate(loader):
         print(imgs.shape)
         print(captions.shape)
         
         if idx >5:
             sys.exit()
+    '''
