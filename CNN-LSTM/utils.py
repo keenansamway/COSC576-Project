@@ -38,7 +38,7 @@ def print_examples(model, device, dataset):
         path = os.path.join(images_loc, dir)
         test_img = transform(Image.open(path).convert("RGB")).unsqueeze(0)
         print(f"Example {i}) OUTPUT: " + " ".join(model.caption_image(test_img.to(device), dataset.vocab)))
-        if i > 2:
+        if i > 5:
             break
         
     model.train()

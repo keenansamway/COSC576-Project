@@ -14,10 +14,23 @@ def test():
     hidden_size = 256
     num_layers = 1
     learning_rate = 3e-4
-    batch_size = 32
+    batch_size = 128
     num_workers = 2
     dropout = 0.5
+    
+    #dataset_to_use = "PCCD"
+    dataset_to_use = "flickr8k"
+    
+    if dataset_to_use == "PCCD":
+        imgs_folder = "datasets/PCCD/images/full"
+        annotation_file = "datasets/PCCD/raw.json"
+        test_file = "datasets/PCCD/images/PCCD_test.txt"
         
+    elif dataset_to_use == "flickr8k":
+        imgs_folder = "datasets/flickr8k/test_examples"
+        annotation_file = "datasets/flickr8k/captions.txt"
+        test_file = "datasets/flickr8k/flickr8k_test.txt"
+    
     transform = transforms.Compose(
         [
             transforms.Resize((356,356)),
@@ -31,9 +44,10 @@ def test():
 
     
     _, dataset = get_loader(
-        imgs_folder="datasets/PCCD/images/full",
-        annotation_file="datasets/PCCD/raw.json",
-        test_file="datasets/PCCD/images/PCCD_test.txt",
+        dataset_to_use=dataset_to_use,
+        imgs_folder=imgs_folder,
+        annotation_file=annotation_file,
+        test_file=test_file,
         transform=transform,
         batch_size=batch_size,
         num_workers=num_workers,

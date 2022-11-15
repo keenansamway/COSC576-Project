@@ -53,9 +53,10 @@ class Vocabulary:
 
 # Flickr8k Dataset
 class Flickr8k(Dataset):
-    def __init__(self, imgs_dir, captions_file, transform=None, freq_threshold=5):
+    def __init__(self, imgs_dir, captions_file, test_file, transform=None, freq_threshold=5):
         self.imgs_dir = imgs_dir
         self.df = pd.read_csv(captions_file)
+        self.test_file = test_file
         self.transform = transform
         
         self.imgs = self.df['image']
@@ -136,9 +137,12 @@ class MyCollate:
 
 
 # def get_loader()
-def get_loader(imgs_folder, annotation_file, transform, test_file="", batch_size=32, num_workers=8, freq_threshold=5, shuffle=True, pin_memory=True):
+def get_loader(dataset_to_use, imgs_folder, annotation_file, transform, test_file="", batch_size=32, num_workers=8, freq_threshold=5, shuffle=True, pin_memory=True):
     
-    dataset = PCCD(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
+    if dataset_to_use == "PCCD":
+        dataset = PCCD(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
+    elif dataset_to_use == "flickr8k":
+        dataset = Flickr8k(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     
     pad_idx = dataset.vocab.stoi["<PAD>"]
     
