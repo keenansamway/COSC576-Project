@@ -35,9 +35,12 @@ def print_examples(model, device, dataset):
     model.eval()
     
     for i, dir in enumerate(filename_list):
-        dir = os.path.join(images_loc, dir)
-        test_img = transform(Image.open(dir).convert("RGB")).unsqueeze(0)
-        print(f"Example {i} OUTPUT: " + " ".join(model.caption_image(test_img.to(device), dataset.vocab)))
+        path = os.path.join(images_loc, dir)
+        test_img = transform(Image.open(path).convert("RGB")).unsqueeze(0)
+        print(f"Example {i}) OUTPUT: " + " ".join(model.caption_image(test_img.to(device), dataset.vocab)))
+        if i > 2:
+            break
+        
     model.train()
     
 if __name__ == "__main__":

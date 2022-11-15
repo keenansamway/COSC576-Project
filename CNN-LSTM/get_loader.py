@@ -90,12 +90,13 @@ class MyCollate:
         self.pad_idx = pad_idx
         
     def __call__(self, batch):
-        imgs = [item[0] for item in batch]
-        imgs = torch.stack(imgs, dim=0)
+        imgs = [item[0].unsqueeze(0) for item in batch]
+        imgs = torch.cat(imgs, dim=0)
         captions = [item[1] for item in batch]
+        lengths = [len(cap) for cap in captions]
         targets = pad_sequence(captions, batch_first=False, padding_value=self.pad_idx)
         
-        return imgs, targets
+        return imgs, targets, lengths
 
 
 # def get_loader()

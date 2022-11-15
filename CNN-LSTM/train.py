@@ -29,8 +29,8 @@ def train():
     batch_size = 32
     num_workers = 2
     dropout = 0.5
-    num_epochs = 2
     
+    num_epochs = 3
     
     load_model = True
     save_model = True
@@ -74,7 +74,7 @@ def train():
     #optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
     
-    for name, param in model.encoder.resnet.named_parameters():
+    for param in model.encoder.resnet.parameters():
         param.requires_grad = train_CNN
             
     # for tensorboard
@@ -88,8 +88,6 @@ def train():
         
     model.train()
     
-    # for tensorboard
-    
     for epoch in range(num_epochs):
         if save_model:
             checkpoint = {
@@ -97,9 +95,9 @@ def train():
                 "optimizer": optimizer.state_dict(),
                 "step": step,
             }
-            save_checkpoint(checkpoint)
+            save_checkpoint(checkpoint, filename="CNN-LSTM/runs/checkpoint.pth.tar")
         
-        for idx, (imgs, captions) in tqdm(enumerate(train_loader), total=len(train_loader), leave=True):
+        for idx, (imgs, captions, lengths) in tqdm(enumerate(train_loader), total=len(train_loader), leave=True):
             #print(f"imgs size: {imgs.size()}")
             #print(f"captions size: {captions.size()}")
             #sys.exit()
@@ -123,7 +121,7 @@ def train():
                 step += 1
             
             optimizer.zero_grad()
-            loss.backward(loss)
+            loss.backward()
             optimizer.step()
 
     print("Epoch [{}/[{}], Loss: {:.4f}".format(epoch+1, num_epochs, loss.item()))

@@ -17,6 +17,7 @@ class EncoderCNN(nn.Module):
         
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
+        self.bn = nn.BatchNorm1d(embed_size, momentum=0.01)
         
     def forward(self, images):
         # images: (batch_size, 3, 224, 224)
@@ -31,6 +32,7 @@ class EncoderCNN(nn.Module):
         # features: (batch_size, embed_size)
         
         features = self.relu(features)
+        features = self.bn(features)
         features = self.dropout(features)
         # features: (batch_size, embed_size)
         return features
@@ -39,10 +41,10 @@ class EncoderCNN(nn.Module):
 class DecoderLSTM(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, num_layers, dropout):
         super(DecoderLSTM, self).__init__()
+        if num_layers < 2: dropout=0.0
         self.word_embedding = nn.Embedding(vocab_size, embed_size)
-        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, batch_first=False)
+        self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, dropout=dropout, batch_first=False)
         self.linear = nn.Linear(hidden_size, vocab_size)
-        self.dropout = nn.Dropout(dropout)
     
     def forward(self, features, captions):
         # features: (batch_size, embed_size)
@@ -82,14 +84,15 @@ class CNNtoLSTM(nn.Module):
         
         with torch.no_grad():
             # image: (3, 224, 224)
-            
+
             inputs = self.encoder(image)                                    # inputs: (batch_size=1, embed_size)
-            inputs = inputs.unsqueeze(0)                                    # inputs: (1, batch_size=1, embed_size)            
+            inputs = inputs.unsqueeze(0)                                    # inputs: (1, batch_size=1, embed_size)
             hidden = None
-            
+
             for _ in range(max_length):
                 lstm_out, hidden = self.decoder.lstm(inputs, hidden)        # lstm_out: (1, batch_size=1, hidden_size)
-                output = self.decoder.linear(lstm_out.squeeze(0))           # output: (1, batch_size=1, vocab_size)
+                lstm_out = lstm_out.squeeze(0)                              # lstm_out: (batch_size=1, hidden_size)
+                output = self.decoder.linear(lstm_out)                      # output: (batch_size=1, vocab_size)
                 
                 predicted = torch.argmax(output, dim=1)                     # predicted: (batch_size=1)
                 result_caption.append(predicted.item())
