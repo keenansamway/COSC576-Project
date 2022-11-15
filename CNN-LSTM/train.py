@@ -52,7 +52,7 @@ def train():
         transform=transform,
         batch_size=batch_size,
         num_workers=num_workers,
-        freq_threshold=8,
+        freq_threshold=5,
     )
     vocab_size = len(dataset.vocab)
     

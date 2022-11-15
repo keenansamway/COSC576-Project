@@ -22,19 +22,12 @@ class EncoderCNN(nn.Module):
     def forward(self, images):
         # images: (batch_size, 3, 224, 224)
         
-        features = self.resnet(images)
-        # features: (batch_size, 2048, 1, 1)
-
-        features = features.view(features.size(0), -1)
-        # features: (batch_size, 2048)
-        
-        features = self.linear(features)
-        # features: (batch_size, embed_size)
-        
-        features = self.relu(features)
-        #features = self.bn(features)
-        features = self.dropout(features)
-        # features: (batch_size, embed_size)
+        features = self.resnet(images)                      # features: (batch_size, 2048, 1, 1)
+        features = features.view(features.size(0), -1)      # features: (batch_size, 2048)
+        features = self.linear(features)                    # features: (batch_size, embed_size)
+        features = self.relu(features)                      
+        # features = self.bn(features)
+        features = self.dropout(features)                   # features: (batch_size, embed_size)
         return features
 
 # class DecoderRNN(nn.Module):
@@ -51,20 +44,11 @@ class DecoderLSTM(nn.Module):
         # features: (batch_size, embed_size)
         # captions: (caption_length, batch_size)
         
-        captions = captions[:-1]
-        # captions: (caption_length-1, batch_size)
-
-        embeddings = self.word_embedding(captions)
-        # embeddings: (caption_length-1, batch_size, embed_size)
-        
-        packed = torch.cat((features.unsqueeze(0), embeddings), dim=0)
-        # packed: (caption_length, batch_size, embed_size)
-        
-        lstm_out, _ = self.lstm(packed)
-        # lstm_out: (caption_length, batch_size, hidden_size)
-        
-        outputs = self.linear(lstm_out)
-        # outputs: (caption_length, batch_size, vocab_size)
+        captions = captions[:-1]                                            # captions: (caption_length-1, batch_size)
+        embeddings = self.word_embedding(captions)                          # embeddings: (caption_length-1, batch_size, embed_size)
+        packed = torch.cat((features.unsqueeze(0), embeddings), dim=0)      # packed: (caption_length, batch_size, embed_size)
+        lstm_out, _ = self.lstm(packed)                                     # lstm_out: (caption_length, batch_size, hidden_size)
+        outputs = self.linear(lstm_out)                                     # outputs: (caption_length, batch_size, vocab_size)
         
         return outputs
 

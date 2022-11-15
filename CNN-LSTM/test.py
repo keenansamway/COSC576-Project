@@ -32,6 +32,7 @@ def test():
     _, dataset = get_loader(
         imgs_folder="datasets/PCCD/images/full",
         annotation_file="datasets/PCCD/raw.json",
+        test_file="datasets/PCCD/images/PCCD_test.txt",
         transform=transform,
         batch_size=batch_size,
         num_workers=num_workers,

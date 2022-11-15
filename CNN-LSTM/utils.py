@@ -4,7 +4,7 @@ import pandas as pd
 from PIL import Image
 import torchvision.transforms as transforms
 
-def save_checkpoint(state, filename="CNN-LSTM/runs/checkpoint.pth.tar"):
+def save_checkpoint(state, filename):
     print("-- Saving Checkpoint --")
     torch.save(state, filename)
     
@@ -25,8 +25,8 @@ def print_examples(model, device, dataset):
         ]
     )
     
-    filename_loc = "datasets/PCCD/images/PCCD_test.txt"
-    images_loc = "datasets/PCCD/images/full"
+    filename_loc = dataset.test_file
+    images_loc = dataset.imgs_dir
     
     filename_list = pd.read_csv(filename_loc, header=None)
     filename_list = filename_list.values.reshape(-1).tolist()

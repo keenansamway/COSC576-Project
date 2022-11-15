@@ -51,11 +51,42 @@ class Vocabulary:
         
         return [self.stoi[token] if token in self.stoi else self.stoi["<UNK>"] for token in tokenized_text]
 
-# class PCCD(Dataset):
-class PCCD(Dataset):
+# Flickr8k Dataset
+class Flickr8k(Dataset):
     def __init__(self, imgs_dir, captions_file, transform=None, freq_threshold=5):
         self.imgs_dir = imgs_dir
+        self.df = pd.read_csv(captions_file)
+        self.transform = transform
+        
+        self.imgs = self.df['image']
+        self.captions = self.df['caption']
+        
+        self.vocab = Vocabulary(freq_threshold)
+        self.vocab.build_vocabulary(self.captions.tolist())
+        
+    def __len__(self):
+        return len(self.df)
+    
+    def __getitem__(self, index):
+        caption = self.captions[index]
+        img_id = self.imgs[index]
+        img = Image.open(os.path.join(self.imgs_dir, img_id)).convert("RGB")
+        
+        if self.transform is not None:
+            img = self.transform(img)
+            
+        numericalized_caption = [self.vocab.stoi["<SOS>"]]
+        numericalized_caption += self.vocab.numericalize(caption)
+        numericalized_caption.append(self.vocab.stoi["<EOS>"])
+        
+        return img, torch.tensor(numericalized_caption)
+
+# PCCD Dataset
+class PCCD(Dataset):
+    def __init__(self, imgs_dir, captions_file, test_file, transform=None, freq_threshold=5):
+        self.imgs_dir = imgs_dir
         self.df = pd.read_json(captions_file)
+        self.test_file = test_file
         self.transform = transform
         
         self.df["general_impression"] = self.df["general_impression"].fillna("")
@@ -89,7 +120,7 @@ class PCCD(Dataset):
         return img, torch.tensor(numericalized_caption)
     
 
-# class MyCollate:
+# custom collate
 class MyCollate:
     def __init__(self, pad_idx):
         self.pad_idx = pad_idx
@@ -105,9 +136,9 @@ class MyCollate:
 
 
 # def get_loader()
-def get_loader(imgs_folder, annotation_file, transform, batch_size=32, num_workers=8, freq_threshold=5, shuffle=True, pin_memory=True):
+def get_loader(imgs_folder, annotation_file, test_file, transform, batch_size=32, num_workers=8, freq_threshold=5, shuffle=True, pin_memory=True):
     
-    dataset = PCCD(imgs_folder, annotation_file, transform=transform, freq_threshold=freq_threshold)
+    dataset = PCCD(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     
     pad_idx = dataset.vocab.stoi["<PAD>"]
     
