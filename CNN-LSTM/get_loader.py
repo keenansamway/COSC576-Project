@@ -136,7 +136,7 @@ class MyCollate:
 
 
 # def get_loader()
-def get_loader(imgs_folder, annotation_file, test_file, transform, batch_size=32, num_workers=8, freq_threshold=5, shuffle=True, pin_memory=True):
+def get_loader(imgs_folder, annotation_file, transform, test_file="", batch_size=32, num_workers=8, freq_threshold=5, shuffle=True, pin_memory=True):
     
     dataset = PCCD(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     

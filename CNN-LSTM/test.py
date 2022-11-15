@@ -17,9 +17,7 @@ def test():
     batch_size = 32
     num_workers = 2
     dropout = 0.5
-    
-    path = "CNN-LSTM/runs/checkpoint.pth.tar"
-    
+        
     transform = transforms.Compose(
         [
             transforms.Resize((356,356)),
@@ -28,6 +26,9 @@ def test():
             transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)),
         ]
     )
+    
+    path = "CNN-LSTM/runs/checkpoint.pth.tar"
+
     
     _, dataset = get_loader(
         imgs_folder="datasets/PCCD/images/full",
