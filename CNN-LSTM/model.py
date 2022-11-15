@@ -17,7 +17,7 @@ class EncoderCNN(nn.Module):
         
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
-        self.bn = nn.BatchNorm1d(embed_size, momentum=0.01)
+        #self.bn = nn.BatchNorm1d(embed_size, momentum=0.01)
         
     def forward(self, images):
         # images: (batch_size, 3, 224, 224)
@@ -32,7 +32,7 @@ class EncoderCNN(nn.Module):
         # features: (batch_size, embed_size)
         
         features = self.relu(features)
-        features = self.bn(features)
+        #features = self.bn(features)
         features = self.dropout(features)
         # features: (batch_size, embed_size)
         return features
@@ -42,6 +42,7 @@ class DecoderLSTM(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, num_layers, dropout):
         super(DecoderLSTM, self).__init__()
         if num_layers < 2: dropout=0.0
+        
         self.word_embedding = nn.Embedding(vocab_size, embed_size)
         self.lstm = nn.LSTM(embed_size, hidden_size, num_layers, dropout=dropout, batch_first=False)
         self.linear = nn.Linear(hidden_size, vocab_size)

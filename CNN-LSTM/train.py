@@ -32,8 +32,8 @@ def train():
     
     num_epochs = 3
     
-    load_model = True
-    save_model = True
+    load_model = False
+    save_model = False
     train_CNN = False
     # True False
     
@@ -52,6 +52,7 @@ def train():
         transform=transform,
         batch_size=batch_size,
         num_workers=num_workers,
+        freq_threshold=8,
     )
     vocab_size = len(dataset.vocab)
     

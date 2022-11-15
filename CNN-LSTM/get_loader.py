@@ -1,4 +1,4 @@
-import os
+import os, sys
 import pandas as pd
 import spacy
 import torch
@@ -25,6 +25,7 @@ class Vocabulary:
     def tokenizer_eng(text):
         return [tok.text.lower() for tok in spacy_eng.tokenizer(text)]
     
+    # Create dictionary of vocabulary and frequency
     def build_vocabulary(self, sentence_list):
         frequencies = {}
         idx = 4
@@ -32,11 +33,15 @@ class Vocabulary:
         for sentence in sentence_list:
             for word in self.tokenizer_eng(sentence):
                 if word not in frequencies:
+                    # add word to frequencies dictionary, set frequency to 1 (initial word)
                     frequencies[word] = 1
                 else:
+                    # word is in frequencies dictionary, increment frequency by 1
                     frequencies[word] += 1
                     
                 if frequencies[word] == self.freq_threshold:
+                    # word has reached frequency threshold in vocab dictionary
+                    # add word to vocab dictionary (at most once)
                     self.stoi[word] = idx
                     self.itos[idx] = word
                     idx += 1
@@ -100,9 +105,9 @@ class MyCollate:
 
 
 # def get_loader()
-def get_loader(imgs_folder, annotation_file, transform, batch_size=32, num_workers=8, shuffle=True, pin_memory=True):
+def get_loader(imgs_folder, annotation_file, transform, batch_size=32, num_workers=8, frequ_threshold=5, shuffle=True, pin_memory=True):
     
-    dataset = PCCD(imgs_folder, annotation_file, transform=transform)
+    dataset = PCCD(imgs_folder, annotation_file, transform=transform, freq_threshold=frequ_threshold)
     
     pad_idx = dataset.vocab.stoi["<PAD>"]
     
@@ -126,8 +131,10 @@ if __name__ == "__main__":
     captions_file = "datasets/PCCD/raw.json"
 
     loader, dataset = get_loader(imgs_dir, captions_file, transform=transform)
-   
     
-    for idx, (imgs, captions) in enumerate(loader):
+    for idx, (imgs, captions, lengths) in enumerate(loader):
         print(imgs.shape)
         print(captions.shape)
+        
+        if idx >5:
+            sys.exit()
