@@ -1,5 +1,4 @@
-PCCD
-flickr8k
+datasets
 .DS_Store
 runs
 __pycache__
