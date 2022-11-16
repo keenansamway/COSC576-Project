@@ -1,6 +1,5 @@
 datasets
 .DS_Store
-**/.DS_Store
 runs
 __pycache__
 CNN-LSTM-v1
