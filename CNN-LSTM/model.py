@@ -12,6 +12,7 @@ class EncoderCNN(nn.Module):
         
         self.resnet = models.resnet50(weights=ResNet50_Weights.DEFAULT)
         self.in_features = self.resnet.fc.in_features
+        
         self.resnet = nn.Sequential(*(list(self.resnet.children())[:-1]))
         self.linear = nn.Linear(self.in_features, embed_size)
         

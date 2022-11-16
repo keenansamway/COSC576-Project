@@ -18,6 +18,7 @@ def test():
     num_workers = 2
     dropout = 0.5
     
+    
     #dataset_to_use = "PCCD"
     dataset_to_use = "flickr8k"
     

@@ -43,7 +43,7 @@ def train():
         imgs_folder = "datasets/flickr8k/images"
         annotation_file = "datasets/flickr8k/captions.txt"
     
-    load_model = False
+    load_model = True
     save_model = True
     train_CNN = False
     # True False

@@ -23,7 +23,12 @@ class Vocabulary:
     
     @staticmethod
     def tokenizer_eng(text):
-        return [tok.text.lower() for tok in spacy_eng.tokenizer(text)]
+        
+        ## REMOVE USELESS WORDS AND CHARACTERS
+        
+        
+        tokenized_text = [tok.text.lower() for tok in spacy_eng.tokenizer(text)]
+        return tokenized_text
     
     # Create dictionary of vocabulary and frequency
     def build_vocabulary(self, sentence_list):
