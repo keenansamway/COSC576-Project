@@ -75,14 +75,14 @@ class DecoderLSTM(nn.Module):
         # features: (batch_size, embed_size)
         # captions: (caption_length, batch_size)
         
-        captions1 = captions[:-1]                                      # captions: (caption_length-1, batch_size)
-        embeddings = self.embed(captions1)                             # embeddings: (caption_length-1, batch_size, embed_size)
-        embeddings = torch.cat((features.unsqueeze(0), embeddings), dim=0)  # packed: (caption_length, batch_size, embed_size)
+        captions1 = captions[:-1]
+        embeddings = self.embed(captions1)
+        embeddings = torch.cat((features.unsqueeze(0), embeddings), dim=0)
         
         #packed = pack_padded_sequence(embeddings, lengths, batch_first=False, enforce_sorted=True)    
         
-        lstm_out, _ = self.lstm(embeddings)                              # lstm_out[0]: (caption_length, batch_size, hidden_size)
-        linear_outputs = self.linear(lstm_out)                           # outputs: (caption_length, batch_size, vocab_size)
+        lstm_out, _ = self.lstm(embeddings)
+        linear_outputs = self.linear(lstm_out)
         
         #outputs = linear_outputs.reshape(-1, self.vocab_size)
         
@@ -92,20 +92,20 @@ class DecoderLSTM(nn.Module):
         result_text = []
         
         with torch.no_grad():
-            features = inputs                                    # inputs: (batch_size=1, embed_size)
-            lstm_in = features.unsqueeze(0)                                    # inputs: (1, batch_size=1, embed_size)
+            features = inputs
+            lstm_in = features.unsqueeze(0)
             hidden = None
 
             for _ in range(max_length):
-                lstm_out, hidden = self.lstm(lstm_in, hidden)        # lstm_out: (1, batch_size=1, hidden_size)
-                linear_in = lstm_out.squeeze(0)                              # lstm_out: (batch_size=1, hidden_size)
-                linera_out = self.linear(linear_in)                      # output: (batch_size=1, vocab_size)
+                lstm_out, hidden = self.lstm(lstm_in, hidden)
+                linear_in = lstm_out.squeeze(0)
+                linera_out = self.linear(linear_in)
                 
-                predicted = torch.argmax(linera_out, dim=1)                     # predicted: (batch_size=1)
+                predicted = torch.argmax(linera_out, dim=1)
                 result_text.append(predicted.item())
                 
-                lstm_in = self.embed(predicted)                      # input: (batch_size=1, embed_size)
-                lstm_in = lstm_in.unsqueeze(0)                                # input: (1, batch_size=1, embed_size)
+                lstm_in = self.embed(predicted)
+                lstm_in = lstm_in.unsqueeze(0)
 
                 if vocabulary.itos[predicted.item()] == "<EOS>":
                     break
