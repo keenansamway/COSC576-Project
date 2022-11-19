@@ -11,7 +11,6 @@ from torch.nn.utils.rnn import pad_sequence
 from model import CNNtoLSTM
 
 """
-
 Used code from:
 https://github.com/aladdinpersson/Machine-Learning-Collection/tree/master/ML/Pytorch/more_advanced/image_captioning
 https://github.com/yunjey/pytorch-tutorial/tree/master/tutorials/03-advanced/image_captioning
@@ -26,14 +25,14 @@ def train():
     hidden_size = 256
     num_layers = 1
     learning_rate = 3e-4
-    batch_size = 128
+    batch_size = 64
     num_workers = 2
-    dropout = 0.5
+    dropout = 0.0
     
-    num_epochs = 3
+    num_epochs = 5
     
-    #dataset_to_use = "PCCD"
-    dataset_to_use = "flickr8k"
+    dataset_to_use = "PCCD"
+    #dataset_to_use = "flickr8k"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -43,7 +42,7 @@ def train():
         imgs_folder = "datasets/flickr8k/images"
         annotation_file = "datasets/flickr8k/captions.txt"
     
-    load_model = True
+    load_model = False
     save_model = True
     train_CNN = False
     # True False
@@ -112,23 +111,16 @@ def train():
             save_checkpoint(checkpoint, filename="CNN-LSTM/runs/checkpoint.pth.tar")
         
         for idx, (imgs, captions, lengths) in tqdm(enumerate(train_loader), total=len(train_loader), leave=True):
-            #print(f"imgs size: {imgs.size()}")
-            #print(f"captions size: {captions.size()}")
-            #sys.exit()
             imgs = imgs.to(device)
             captions = captions.to(device)
             
             outputs = model(imgs, captions)
-            #print(f"outputs size: {outputs.size()}")
                         
-            captions = captions.reshape(-1)
-            #print(f"captions size: {captions.size()}")
+            targets = captions.reshape(-1)
             
             outputs = outputs.reshape(-1, outputs.shape[2])
-            #print(f"outputs size: {outputs.size()}")
                         
-            #sys.exit()
-            loss = criterion(outputs, captions)
+            loss = criterion(outputs, targets)
             
             if save_model:
                 writer.add_scalar("Training loss", loss.item(), global_step=step)
@@ -138,7 +130,7 @@ def train():
             loss.backward()
             optimizer.step()
 
-    print("Epoch [{}/[{}], Loss: {:.4f}".format(epoch+1, num_epochs, loss.item()))
+        print("Epoch [{}/[{}], Loss: {:.4f}".format(epoch+1, num_epochs, loss.item()))
 
 if __name__ == "__main__":
     train()

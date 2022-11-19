@@ -132,12 +132,22 @@ class MyCollate:
         self.pad_idx = pad_idx
         
     def __call__(self, batch):
-        imgs = [item[0].unsqueeze(0) for item in batch]
-        imgs = torch.cat(imgs, dim=0)
+        # Sort batch list by caption length in descending order (longest to shortest)
+        #batch.sort(key=lambda x: len(x[1]), reverse=True)
+        
+        ## TEST IF SORTING IS NEEDED OR NOT
+        
+        imgs = [item[0] for item in batch]
+        imgs = torch.stack(imgs)
+        
         captions = [item[1] for item in batch]
-        lengths = [len(cap) for cap in captions]
         targets = pad_sequence(captions, batch_first=False, padding_value=self.pad_idx)
         
+        lengths = [len(cap) for cap in captions]
+
+        # imgs:    (batch size, 3, 224, 224)
+        # targets: (sequence length, batch size)
+        # lengths: (batch size)
         return imgs, targets, lengths
 
 

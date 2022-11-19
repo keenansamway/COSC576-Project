@@ -5,7 +5,7 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 from utils import print_examples, save_checkpoint, load_checkpoint
 from get_loader import get_loader
-from model import CNNtoLSTM
+from model import CNNtoLSTM, DecoderLSTM
 
 
 def test():
@@ -14,13 +14,13 @@ def test():
     hidden_size = 256
     num_layers = 1
     learning_rate = 3e-4
-    batch_size = 128
+    batch_size = 64
     num_workers = 2
-    dropout = 0.5
+    dropout = 0.0
     
     
-    #dataset_to_use = "PCCD"
-    dataset_to_use = "flickr8k"
+    dataset_to_use = "PCCD"
+    #dataset_to_use = "flickr8k"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -71,7 +71,10 @@ def test():
 
     load_checkpoint(torch.load(path), model, optimizer)
     
-    print_examples(model, device, dataset)
+    #print_examples(model, device, dataset)
+    inputs = torch.tensor(torch.rand(1, embed_size)).to(device)
+    outputs = model.decoder.generate_text(inputs, dataset.vocab)
+    print(outputs)
 
 if __name__ == "__main__":
     test()
