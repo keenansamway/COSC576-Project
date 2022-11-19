@@ -26,6 +26,7 @@ class Vocabulary:
     def tokenizer_eng(text):
         
         ## REMOVE USELESS WORDS AND CHARACTERS
+        #cleaned_text = ''.join(e for e in text if e.isalnum())
         cleaned_text = re.sub(r"[^a-zA-Z0-9 ]", "", text)
         
         tokenized_text = [tok.text.lower() for tok in spacy_eng.tokenizer(cleaned_text)]

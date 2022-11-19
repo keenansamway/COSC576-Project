@@ -10,7 +10,7 @@ from model import CNNtoLSTM, DecoderLSTM
 
 def test():
     # Hyperparameters
-    embed_size = 256
+    embed_size = 512
     hidden_size = 256
     num_layers = 1
     learning_rate = 3e-4
@@ -71,8 +71,11 @@ def test():
 
     load_checkpoint(torch.load(path), model, optimizer)
     
+    ## Generate text from images
     #print_examples(model, device, dataset)
-    inputs = torch.tensor(torch.rand(1, embed_size)).to(device)
+    
+    ## Generate text from random initialization
+    inputs = torch.rand(1, embed_size).to(device)
     outputs = model.decoder.generate_text(inputs, dataset.vocab)
     print(outputs)
 

@@ -21,7 +21,7 @@ PyTorch has an issue with the backwards pass in LSTM when using batch first on M
 
 def train():
     # Hyperparameters
-    embed_size = 256
+    embed_size = 512
     hidden_size = 256
     num_layers = 1
     learning_rate = 3e-4
@@ -29,7 +29,7 @@ def train():
     num_workers = 2
     dropout = 0.0
     
-    num_epochs = 5
+    num_epochs = 10
     
     dataset_to_use = "PCCD"
     #dataset_to_use = "flickr8k"
@@ -42,7 +42,7 @@ def train():
         imgs_folder = "datasets/flickr8k/images"
         annotation_file = "datasets/flickr8k/captions.txt"
     
-    load_model = False
+    load_model = True
     save_model = True
     train_CNN = False
     # True False
