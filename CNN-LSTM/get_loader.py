@@ -1,6 +1,7 @@
 import os, sys
 import pandas as pd
 import spacy
+import re
 import torch
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
@@ -25,9 +26,9 @@ class Vocabulary:
     def tokenizer_eng(text):
         
         ## REMOVE USELESS WORDS AND CHARACTERS
+        cleaned_text = re.sub(r"[^a-zA-Z0-9 ]", "", text)
         
-        
-        tokenized_text = [tok.text.lower() for tok in spacy_eng.tokenizer(text)]
+        tokenized_text = [tok.text.lower() for tok in spacy_eng.tokenizer(cleaned_text)]
         return tokenized_text
     
     # Create dictionary of vocabulary and frequency
