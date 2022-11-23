@@ -19,8 +19,9 @@ def test():
     dropout = 0.0
     
     
-    dataset_to_use = "PCCD"
+    #dataset_to_use = "PCCD"
     #dataset_to_use = "flickr8k"
+    dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -31,6 +32,10 @@ def test():
         imgs_folder = "datasets/flickr8k/test_examples"
         annotation_file = "datasets/flickr8k/captions.txt"
         test_file = "datasets/flickr8k/flickr8k_test.txt"
+    
+    elif dataset_to_use == "AVA":
+        imgs_folder = "datasets/AVA/images"
+        annotation_file = "datasets/AVA/CLEAN_AVA_FULL_COMMENTS.json"
     
     transform = transforms.Compose(
         [

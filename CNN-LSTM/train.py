@@ -23,16 +23,17 @@ def train():
     # Hyperparameters
     embed_size = 512
     hidden_size = 256
-    num_layers = 1
+    num_layers = 2
     learning_rate = 3e-4
     batch_size = 64
     num_workers = 2
     dropout = 0.0
     
-    num_epochs = 10
+    num_epochs = 1
     
-    dataset_to_use = "PCCD"
+    #dataset_to_use = "PCCD"
     #dataset_to_use = "flickr8k"
+    dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -42,7 +43,11 @@ def train():
         imgs_folder = "datasets/flickr8k/images"
         annotation_file = "datasets/flickr8k/captions.txt"
     
-    load_model = True
+    elif dataset_to_use == "AVA":
+        imgs_folder = "datasets/AVA/images"
+        annotation_file = "datasets/AVA/CLEAN_AVA_FULL_COMMENTS.json"
+    
+    load_model = False
     save_model = True
     train_CNN = False
     # True False
@@ -109,17 +114,30 @@ def train():
                 "step": step,
             }
             save_checkpoint(checkpoint, filename="CNN-LSTM/runs/checkpoint.pth.tar")
+            
         
         for idx, (imgs, captions, lengths) in tqdm(enumerate(train_loader), total=len(train_loader), leave=True):
+            num_captions = batch_size * (idx + 1)
+            if num_captions > 64000:
+                # Go to next epoch
+                if save_model:
+                    checkpoint = {
+                        "state_dict": model.state_dict(),
+                        "optimizer": optimizer.state_dict(),
+                        "step": step,
+                    }
+                    save_checkpoint(checkpoint, filename="CNN-LSTM/runs/checkpoint.pth.tar")
+                break
+            
             imgs = imgs.to(device)
             captions = captions.to(device)
             
             outputs = model(imgs, captions)
-                        
+            
             targets = captions.reshape(-1)
             
             outputs = outputs.reshape(-1, outputs.shape[2])
-                        
+            
             loss = criterion(outputs, targets)
             
             if save_model:
@@ -129,6 +147,7 @@ def train():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+            
 
         print("Epoch [{}/[{}], Loss: {:.4f}".format(epoch+1, num_epochs, loss.item()))
 
