@@ -140,7 +140,7 @@ class AVA(Dataset):
         #Get img, caption columns
         self.imgs = []
         self.captions = []
-        for i, img in enumerate(self.df['images']):
+        for i, img in enumerate(self.df['filename']):
             for j, caption in enumerate(self.df['sentences'][i]):
                 self.imgs.append(img)
                 self.captions.append(caption['raw'])
