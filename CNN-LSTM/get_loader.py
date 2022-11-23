@@ -142,12 +142,14 @@ class AVA(Dataset):
         self.captions = []
         for i, img in enumerate(self.df['filename']):
             for j, caption in enumerate(self.df['sentences'][i]):
-                self.imgs.append(img)
-                self.captions.append(caption['raw'])
+                if os.path.exists(os.path.join(self.imgs_dir, img)):
+                    self.imgs.append(img)
+                    self.captions.append(caption['raw'])
+                
         
         # Initialize and build vocab
         self.vocab = Vocabulary(freq_threshold)
-        self.vocab.build_vocabulary(self.captions.tolist())
+        self.vocab.build_vocabulary(self.captions)
         
         
     def __len__(self):
@@ -163,7 +165,7 @@ class AVA(Dataset):
             
         numericalized_caption = [self.vocab.stoi["<SOS>"]]
         numericalized_caption += self.vocab.numericalize(caption)
-        numericalized_caption.append(self.vocab.stoi("<EOS>"))
+        numericalized_caption.append(self.vocab.stoi["<EOS>"])
         
         return img, torch.tensor(numericalized_caption)
 

@@ -124,7 +124,7 @@ class CNNtoLSTM(nn.Module):
         outputs = self.decoder(features, captions)
         return outputs
     
-    def caption_image(self, image, vocabulary, max_length=20):
+    def caption_image(self, image, vocabulary, max_length=50):
         result_caption = []
         
         with torch.no_grad():
