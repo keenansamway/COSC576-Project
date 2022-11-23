@@ -1,7 +1,8 @@
-import os, sys
+import os, sys, io
 import pandas as pd
 import spacy
 import re
+import json
 import torch
 from PIL import Image
 from torch.utils.data import DataLoader, Dataset
@@ -114,19 +115,57 @@ class PCCD(Dataset):
         caption = self.captions[index]
         img_id = self.imgs[index]
         img = Image.open(os.path.join(self.imgs_dir, img_id)).convert("RGB")
-        
-        #print(caption)
-        
+                
         if self.transform is not None:
             img = self.transform(img)
             
         numericalized_caption = [self.vocab.stoi["<SOS>"]]
         numericalized_caption += self.vocab.numericalize(caption)
         numericalized_caption.append(self.vocab.stoi["<EOS>"])
-        #print(numericalized_caption)
-        #print("\n\n\n")
+        
         return img, torch.tensor(numericalized_caption)
+
+class AVA(Dataset):
+    def __init__(self, imgs_dir, captions_file, transform=None, freq_threshold=5):
+        self.imgs_dir = imgs_dir
+        self.captions_file = captions_file
+        self.transform = transform
+        self.freq_threshold = freq_threshold
+        
+        # Open dataframe
+        with io.open(self.captions_file, 'r', encoding='utf-8') as f:
+            json_file = json.load(f)
+        self.df = pd.DataFrame(json_file['images'])
+        
+        #Get img, caption columns
+        self.imgs = []
+        self.captions = []
+        for i, img in enumerate(self.df['images']):
+            for j, caption in enumerate(self.df['sentences'][i]):
+                self.imgs.append(img)
+                self.captions.append(caption['raw'])
+        
+        # Initialize and build vocab
+        self.vocab = Vocabulary(freq_threshold)
+        self.vocab.build_vocabulary(self.captions.tolist())
+        
+        
+    def __len__(self):
+        return len(self.df)
     
+    def __getitem__(self, index):
+        caption = self.captions[index]
+        img_id = self.imgs[index]
+        img = Image.open(os.path.join(self.imgs_dir, img_id)).convert("RGB")
+        
+        if self.transform is not None:
+            img = self.transform(img)
+            
+        numericalized_caption = [self.vocab.stoi["<SOS>"]]
+        numericalized_caption += self.vocab.numericalize(caption)
+        numericalized_caption.append(self.vocab.stoi("<EOS>"))
+        
+        return img, torch.tensor(numericalized_caption)
 
 # custom collate
 class MyCollate:
@@ -160,6 +199,8 @@ def get_loader(dataset_to_use, imgs_folder, annotation_file, transform, test_fil
         dataset = PCCD(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     elif dataset_to_use == "flickr8k":
         dataset = Flickr8k(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
+    elif dataset_to_use == "AVA":
+        dataset = AVA(imgs_folder, annotation_file, transform=transform, freq_threshold=freq_threshold)
     
     pad_idx = dataset.vocab.stoi["<PAD>"]
     
