@@ -10,16 +10,16 @@ from model import CNNtoLSTM, DecoderLSTM
 
 def test():
     # Hyperparameters
-    embed_size = 256
-    hidden_size = 256
+    embed_size = 512
+    hidden_size = 512
     num_layers = 1
-    learning_rate = 3e-4
+    learning_rate = 1e-3
     dropout = 0.4
     
     
     #dataset_to_use = "PCCD"
-    dataset_to_use = "flickr8k"
-    #dataset_to_use = "AVA"
+    #dataset_to_use = "flickr8k"
+    dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -33,7 +33,7 @@ def test():
     
     elif dataset_to_use == "AVA":
         imgs_folder = "datasets/AVA/images"
-        annotation_file = "datasets/AVA/CLEAN_AVA_FULL_COMMENTS.feather"
+        annotation_file = "datasets/AVA/CLEAN_AVA_SAMPLE_COMMENTS.feather"
         test_file = "datasets/AVA/AVA_test.txt"
     
     transform = transforms.Compose(
@@ -74,13 +74,13 @@ def test():
     load_checkpoint(torch.load(path), model, optimizer)
     
     ## Generate text from images
-    print_examples(model, device, dataset)
+    #print_examples(model, device, dataset)
     
     ## Generate text from random initialization
-    #start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
-    #hiddens = torch.rand(1, embed_size).to(device)
-    #outputs = model.decoder.generate_text(start_token, hiddens, dataset.vocab)
-    #print(outputs)
+    start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
+    hiddens = torch.rand(1, embed_size).to(device)
+    outputs = model.decoder.generate_text(start_token, hiddens, dataset.vocab)
+    print(outputs)
 
 if __name__ == "__main__":
     test()
