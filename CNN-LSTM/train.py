@@ -8,7 +8,7 @@ from tqdm import tqdm
 from utils import print_examples, save_checkpoint, load_checkpoint
 from get_loader import get_loader
 from torch.nn.utils.rnn import pad_sequence
-
+from model import CNNtoLSTM, EncoderCNN, DecoderLSTM
 
 """
 Used code from:
@@ -26,7 +26,7 @@ def train():
     hidden_size = 512
     num_layers = 1
     learning_rate = 1e-3
-    batch_size = 64
+    batch_size = 128
     num_workers = 2
     dropout = 0.4
     
