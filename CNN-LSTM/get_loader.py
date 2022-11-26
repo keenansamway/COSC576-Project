@@ -26,8 +26,9 @@ class Vocabulary:
     @staticmethod
     def tokenizer_eng(text):
         
-        ## REMOVE USELESS WORDS AND CHARACTERS
+        ## REMOVE SPECIAL CHARACTERS
         #cleaned_text = ''.join(e for e in text if e.isalnum())
+        #cleaned_text = text
         cleaned_text = re.sub(r"[^a-zA-Z0-9 ]", "", text)
         
         tokenized_text = [tok.text.lower() for tok in spacy_eng.tokenizer(cleaned_text)]
@@ -125,26 +126,21 @@ class PCCD(Dataset):
         
         return img, torch.tensor(numericalized_caption)
 
+# AVA-Captions Dataset
 class AVA(Dataset):
-    def __init__(self, imgs_dir, captions_file, transform=None, freq_threshold=5):
+    def __init__(self, imgs_dir, captions_file, test_file, transform=None, freq_threshold=5):
         self.imgs_dir = imgs_dir
         self.captions_file = captions_file
+        self.test_file = test_file
         self.transform = transform
         self.freq_threshold = freq_threshold
         
         # Open dataframe
-        with io.open(self.captions_file, 'r', encoding='utf-8') as f:
-            json_file = json.load(f)
-        self.df = pd.DataFrame(json_file['images'])
+        self.df = pd.read_feather(captions_file)
         
-        #Get img, caption columns
-        self.imgs = []
-        self.captions = []
-        for i, img in enumerate(self.df['filename']):
-            for j, caption in enumerate(self.df['sentences'][i]):
-                if os.path.exists(os.path.join(self.imgs_dir, img)):
-                    self.imgs.append(img)
-                    self.captions.append(caption['raw'])
+        self.imgs = self.df['filename']
+        self.captions = self.df['clean_sentence']
+        self.split = self.df['split']
                 
         
         # Initialize and build vocab
@@ -183,15 +179,19 @@ class MyCollate:
         imgs = [item[0] for item in batch]
         imgs = torch.stack(imgs)
         
-        captions = [item[1] for item in batch]
-        targets = pad_sequence(captions, batch_first=False, padding_value=self.pad_idx)
+        captions = [item[1][:-1] for item in batch]
+        targets = [item[1][1:] for item in batch]
         
+        captions = pad_sequence(captions, batch_first=False, padding_value=self.pad_idx)
+        targets = pad_sequence(targets, batch_first=False, padding_value=self.pad_idx)
+        #packed_targets = pack_padded_sequence(targets, batch_first=False, enforce_sorted=False)
+
         lengths = [len(cap) for cap in captions]
 
         # imgs:    (batch size, 3, 224, 224)
         # targets: (sequence length, batch size)
         # lengths: (batch size)
-        return imgs, targets, lengths
+        return imgs, captions, targets
 
 
 # def get_loader()
@@ -202,7 +202,7 @@ def get_loader(dataset_to_use, imgs_folder, annotation_file, transform, test_fil
     elif dataset_to_use == "flickr8k":
         dataset = Flickr8k(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     elif dataset_to_use == "AVA":
-        dataset = AVA(imgs_folder, annotation_file, transform=transform, freq_threshold=freq_threshold)
+        dataset = AVA(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     
     pad_idx = dataset.vocab.stoi["<PAD>"]
     
