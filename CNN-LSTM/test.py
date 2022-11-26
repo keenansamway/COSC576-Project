@@ -4,24 +4,22 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from utils import print_examples, save_checkpoint, load_checkpoint
-from get_loader import get_loader
+from get_loader import get_loader, Flickr8k, PCCD, AVA
 from model import CNNtoLSTM, DecoderLSTM
 
 
 def test():
     # Hyperparameters
-    embed_size = 512
+    embed_size = 256
     hidden_size = 256
     num_layers = 1
     learning_rate = 3e-4
-    batch_size = 64
-    num_workers = 2
-    dropout = 0.0
+    dropout = 0.4
     
     
     #dataset_to_use = "PCCD"
-    #dataset_to_use = "flickr8k"
-    dataset_to_use = "AVA"
+    dataset_to_use = "flickr8k"
+    #dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -35,7 +33,8 @@ def test():
     
     elif dataset_to_use == "AVA":
         imgs_folder = "datasets/AVA/images"
-        annotation_file = "datasets/AVA/CLEAN_AVA_FULL_COMMENTS.json"
+        annotation_file = "datasets/AVA/CLEAN_AVA_FULL_COMMENTS.feather"
+        test_file = "datasets/AVA/AVA_test.txt"
     
     transform = transforms.Compose(
         [
@@ -48,16 +47,14 @@ def test():
     
     path = "CNN-LSTM/runs/checkpoint.pth.tar"
 
+    freq_threshold = 5
+    if dataset_to_use == "PCCD":
+        dataset = PCCD(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
+    elif dataset_to_use == "flickr8k":
+        dataset = Flickr8k(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
+    elif dataset_to_use == "AVA":
+        dataset = AVA(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     
-    _, dataset = get_loader(
-        dataset_to_use=dataset_to_use,
-        imgs_folder=imgs_folder,
-        annotation_file=annotation_file,
-        test_file=test_file,
-        transform=transform,
-        batch_size=batch_size,
-        num_workers=num_workers,
-    )
     vocab_size = len(dataset.vocab)
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")           ## Nvidia CUDA Acceleration
@@ -77,12 +74,13 @@ def test():
     load_checkpoint(torch.load(path), model, optimizer)
     
     ## Generate text from images
-    #print_examples(model, device, dataset)
+    print_examples(model, device, dataset)
     
     ## Generate text from random initialization
-    inputs = torch.rand(1, embed_size).to(device)
-    outputs = model.decoder.generate_text(inputs, dataset.vocab)
-    print(outputs)
+    #start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
+    #hiddens = torch.rand(1, embed_size).to(device)
+    #outputs = model.decoder.generate_text(start_token, hiddens, dataset.vocab)
+    #print(outputs)
 
 if __name__ == "__main__":
     test()
