@@ -8,32 +8,33 @@ from tqdm import tqdm
 from utils import print_examples, save_checkpoint, load_checkpoint
 from get_loader import get_loader
 from torch.nn.utils.rnn import pad_sequence
-from model import CNNtoLSTM
+
 
 """
 Used code from:
 https://github.com/aladdinpersson/Machine-Learning-Collection/tree/master/ML/Pytorch/more_advanced/image_captioning
 https://github.com/yunjey/pytorch-tutorial/tree/master/tutorials/03-advanced/image_captioning
 https://github.com/rammyram/image_captioning/blob/master/Image_Captioning.ipynb
+https://github.com/RoyalSkye/Image-Caption
 
 PyTorch has an issue with the backwards pass in LSTM when using batch first on MPS (Apple M1) device
 """
 
 def train():
     # Hyperparameters
-    embed_size = 256
-    hidden_size = 256
+    embed_size = 512
+    hidden_size = 512
     num_layers = 1
-    learning_rate = 3e-4
+    learning_rate = 1e-3
     batch_size = 64
-    num_workers = 0
+    num_workers = 2
     dropout = 0.4
     
-    num_epochs = 20
+    num_epochs = 5
     
     #dataset_to_use = "PCCD"
-    dataset_to_use = "flickr8k"
-    #dataset_to_use = "AVA"
+    #dataset_to_use = "flickr8k"
+    dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -45,9 +46,9 @@ def train():
     
     elif dataset_to_use == "AVA":
         imgs_folder = "datasets/AVA/images"
-        annotation_file = "datasets/AVA/CLEAN_AVA_FULL_COMMENTS.feather"
+        annotation_file = "datasets/AVA/CLEAN_AVA_SAMPLE_COMMENTS.feather"
     
-    load_model = True
+    load_model = False
     save_model = True
     train_CNN = False
     # True False
