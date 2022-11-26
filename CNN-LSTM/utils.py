@@ -30,12 +30,11 @@ def print_examples(model, device, dataset):
     filename_list = pd.read_csv(filename_loc, header=None)
     filename_list = filename_list.values.reshape(-1).tolist()
     
-    start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
-    
     model.eval()
     
     for i, dir in enumerate(filename_list):
         path = os.path.join(images_loc, dir)
+        start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
         test_img = transform(Image.open(path).convert("RGB")).unsqueeze(0)
         print(f"Example {i}) OUTPUT: " + " ".join(model.caption_image(start_token, test_img.to(device), dataset.vocab)))
         if i > 5:
