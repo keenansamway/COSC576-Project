@@ -8,29 +8,26 @@ from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 
 # class EncoderCNN(nn.Module):
 class EncoderCNN(nn.Module):
-    def __init__(self, embed_size, dropout, train_model=False):
+    def __init__(self, embed_size, dropout, train_model):
         super(EncoderCNN, self).__init__()
         self.train_model = train_model
         
         self.resnet = models.resnet50(weights=ResNet50_Weights.DEFAULT)
         self.in_features = self.resnet.fc.in_features
         
+        for param in self.resnet.parameters():
+            param.requires_grad = train_model
+        
         self.resnet = nn.Sequential(*(list(self.resnet.children())[:-1]))
         self.linear = nn.Linear(self.in_features, embed_size)
-        
-        self.relu = nn.ReLU()
-        self.dropout = nn.Dropout(dropout)
-        #self.bn = nn.BatchNorm1d(embed_size, momentum=0.01)
-        
+                
     def forward(self, images):
         # images: (batch_size, 3, 224, 224)
         
         features = self.resnet(images)                      # features: (batch_size, 2048, 1, 1)
         features = features.view(features.size(0), -1)      # features: (batch_size, 2048)
         features = self.linear(features)                    # features: (batch_size, embed_size)
-        #features = self.relu(features)                      
-        # features = self.bn(features)
-        features = self.dropout(features)                   # features: (batch_size, embed_size)
+
         return features
 
 # Language Model
@@ -53,6 +50,7 @@ class DecoderLSTM(nn.Module):
         
         # LSTM - https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html
         # Input:  (sequence length, batch size, embed size)
+        # States: (2 if bidirectional else 1 * num layers, batch size, hidden size)
         # Output: (sequence length, batch size, 2 if bidirectional else 1 * hidden size)
         self.lstm = nn.LSTM(
             input_size=embed_size,
@@ -75,48 +73,50 @@ class DecoderLSTM(nn.Module):
         # features: (batch_size, embed_size)
         # captions: (caption_length, batch_size)
         
-        captions1 = captions[:-1]
-        embeddings = self.embed(captions1)
-        embeddings = torch.cat((features.unsqueeze(0), embeddings), dim=0)
-        
+        embeddings = self.embed(captions)
+        state = torch.stack([features]*(self.num_layers), dim=0)
+        states = (state, state)
+
         #packed = pack_padded_sequence(embeddings, lengths, batch_first=False, enforce_sorted=True)    
         
-        lstm_out, _ = self.lstm(embeddings)
+        lstm_out, _ = self.lstm(embeddings, states)
         linear_outputs = self.linear(lstm_out)
         
         #outputs = linear_outputs.reshape(-1, self.vocab_size)
         
         return linear_outputs
     
-    def generate_text(self, inputs, vocabulary, max_length=50):
-        result_text = []
+    ## REVIEW
+    def generate_text(self, start_token, hiddens, vocabulary, max_length=50):
+        result_caption = [start_token.item()]
+        start_token = start_token.unsqueeze(0)
         
         with torch.no_grad():
-            features = inputs
-            lstm_in = features.unsqueeze(0)
-            hidden = None
+            lstm_in = self.embed(start_token)
+            
+            features = hiddens.squeeze(0)
+            state = torch.stack([features]*(self.num_layers), dim=0)
+            states = (state, state)
 
             for _ in range(max_length):
-                lstm_out, hidden = self.lstm(lstm_in, hidden)
-                linear_in = lstm_out.squeeze(0)
-                linera_out = self.linear(linear_in)
+                lstm_out, states = self.lstm(lstm_in, states)
+                linear_out = self.linear(lstm_out)
                 
-                predicted = torch.argmax(linera_out, dim=1)
-                result_text.append(predicted.item())
+                predicted = torch.argmax(linear_out, dim=1)
+                result_caption.append(predicted.item())
                 
                 lstm_in = self.embed(predicted)
-                lstm_in = lstm_in.unsqueeze(0)
 
                 if vocabulary.itos[predicted.item()] == "<EOS>":
                     break
                 
-        return [vocabulary.itos[idx] for idx in result_text]
+        return [vocabulary.itos[idx] for idx in result_caption]
 
 # class CNNtoRNN(nn.Module):
 class CNNtoLSTM(nn.Module):
-    def __init__(self, embed_size, hidden_size, vocab_size, num_layers, dropout):
+    def __init__(self, embed_size, hidden_size, vocab_size, num_layers, dropout, train_CNN=False):
         super(CNNtoLSTM, self).__init__()
-        self.encoder = EncoderCNN(embed_size, dropout)
+        self.encoder = EncoderCNN(embed_size, dropout, train_CNN)
         self.decoder = DecoderLSTM(embed_size, hidden_size, vocab_size, num_layers, dropout)
     
     def forward(self, images, captions):
@@ -124,26 +124,29 @@ class CNNtoLSTM(nn.Module):
         outputs = self.decoder(features, captions)
         return outputs
     
-    def caption_image(self, image, vocabulary, max_length=50):
-        result_caption = []
+    ## REVIEW
+    def caption_image(self, start_token, image, vocabulary, max_length=50):
+        result_caption = [start_token.item()]
+        start_token = start_token.unsqueeze(0)
         
         with torch.no_grad():
+            # start_token: (1)
             # image: (3, 224, 224)
-
-            features = self.encoder(image)                                    # inputs: (batch_size=1, embed_size)
-            lstm_in = features.unsqueeze(0)                                    # inputs: (1, batch_size=1, embed_size)
-            hidden = None
+            
+            lstm_in = self.decoder.embed(start_token)
+            
+            features = self.encoder(image).squeeze(0)
+            state = torch.stack([features]*(self.decoder.num_layers), dim=0)
+            states = (state, state)
 
             for _ in range(max_length):
-                lstm_out, hidden = self.decoder.lstm(lstm_in, hidden)        # lstm_out: (1, batch_size=1, hidden_size)
-                linear_in = lstm_out.squeeze(0)                              # lstm_out: (batch_size=1, hidden_size)
-                linera_out = self.decoder.linear(linear_in)                      # output: (batch_size=1, vocab_size)
+                lstm_out, states = self.decoder.lstm(lstm_in, states)
+                linear_out = self.decoder.linear(lstm_out)
                 
-                predicted = torch.argmax(linera_out, dim=1)                     # predicted: (batch_size=1)
+                predicted = torch.argmax(linear_out, dim=1)
                 result_caption.append(predicted.item())
                 
-                lstm_in = self.decoder.embed(predicted)                      # input: (batch_size=1, embed_size)
-                lstm_in = lstm_in.unsqueeze(0)                                # input: (1, batch_size=1, embed_size)
+                lstm_in = self.decoder.embed(predicted)
 
                 if vocabulary.itos[predicted.item()] == "<EOS>":
                     break
