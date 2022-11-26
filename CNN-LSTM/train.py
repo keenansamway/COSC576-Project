@@ -21,19 +21,19 @@ PyTorch has an issue with the backwards pass in LSTM when using batch first on M
 
 def train():
     # Hyperparameters
-    embed_size = 512
+    embed_size = 256
     hidden_size = 256
-    num_layers = 2
+    num_layers = 1
     learning_rate = 3e-4
     batch_size = 64
-    num_workers = 2
-    dropout = 0.0
+    num_workers = 0
+    dropout = 0.4
     
-    num_epochs = 1
+    num_epochs = 20
     
     #dataset_to_use = "PCCD"
-    #dataset_to_use = "flickr8k"
-    dataset_to_use = "AVA"
+    dataset_to_use = "flickr8k"
+    #dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -45,9 +45,9 @@ def train():
     
     elif dataset_to_use == "AVA":
         imgs_folder = "datasets/AVA/images"
-        annotation_file = "datasets/AVA/CLEAN_AVA_FULL_COMMENTS.json"
+        annotation_file = "datasets/AVA/CLEAN_AVA_FULL_COMMENTS.feather"
     
-    load_model = False
+    load_model = True
     save_model = True
     train_CNN = False
     # True False
@@ -60,7 +60,6 @@ def train():
             transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)),
         ]
     )
-    
     
     train_loader, dataset = get_loader(
         dataset_to_use=dataset_to_use,
@@ -77,7 +76,6 @@ def train():
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")           ## Nvidia CUDA Acceleration
     device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")    ## Apple M1 Metal Acceleration
     
-    
     # initialize model, loss, etc
     model = CNNtoLSTM(
         embed_size=embed_size, 
@@ -85,28 +83,50 @@ def train():
         vocab_size=vocab_size,
         num_layers=num_layers,
         dropout=dropout,
+        train_CNN=train_CNN,
         ).to(device)
     
     criterion = nn.CrossEntropyLoss(ignore_index=dataset.vocab.stoi["<PAD>"])
     
     #optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
-    
-    for param in model.encoder.resnet.parameters():
-        param.requires_grad = train_CNN
             
     # for tensorboard
     if save_model:
         writer = SummaryWriter(os.path.join("CNN-LSTM/runs/", dataset_to_use))
     step = 0
     
-    
     if load_model:
         step = load_checkpoint(torch.load("CNN-LSTM/runs/checkpoint.pth.tar"), model, optimizer)
         
     model.train()
-    
-    for epoch in range(num_epochs):
+    #15e
+    for epoch in range(num_epochs):    
+        for idx, (imgs, captions, targets) in tqdm(enumerate(train_loader), total=len(train_loader), leave=True):
+            optimizer.zero_grad()
+            
+            imgs = imgs.to(device)
+            captions = captions.to(device)
+            targets = targets.to(device)
+            
+            #targets = captions[1:]
+            #captions = captions[:-1]
+            
+            outputs = model(imgs, captions)
+            
+            targets = targets.view(-1)
+            outputs = outputs.view(-1, vocab_size)
+            
+            loss = criterion(outputs, targets)
+            
+            if save_model:
+                writer.add_scalar("Training loss", loss.item(), global_step=step)
+            step += 1
+            
+            loss.backward()
+            optimizer.step()
+            
+            
         if save_model:
             checkpoint = {
                 "state_dict": model.state_dict(),
@@ -114,41 +134,6 @@ def train():
                 "step": step,
             }
             save_checkpoint(checkpoint, filename="CNN-LSTM/runs/checkpoint.pth.tar")
-            
-        
-        for idx, (imgs, captions, lengths) in tqdm(enumerate(train_loader), total=len(train_loader), leave=True):
-            num_captions = batch_size * (idx + 1)
-            if num_captions > 64000:
-                # Go to next epoch
-                if save_model:
-                    checkpoint = {
-                        "state_dict": model.state_dict(),
-                        "optimizer": optimizer.state_dict(),
-                        "step": step,
-                    }
-                    save_checkpoint(checkpoint, filename="CNN-LSTM/runs/checkpoint.pth.tar")
-                break
-            
-            imgs = imgs.to(device)
-            captions = captions.to(device)
-            
-            outputs = model(imgs, captions)
-            
-            targets = captions.reshape(-1)
-            
-            outputs = outputs.reshape(-1, outputs.shape[2])
-            
-            loss = criterion(outputs, targets)
-            
-            if save_model:
-                writer.add_scalar("Training loss", loss.item(), global_step=step)
-                step += 1
-            
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
-            
-
         print("Epoch [{}/[{}], Loss: {:.4f}".format(epoch+1, num_epochs, loss.item()))
 
 if __name__ == "__main__":
