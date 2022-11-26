@@ -28,8 +28,8 @@ class Vocabulary:
         
         ## REMOVE SPECIAL CHARACTERS
         #cleaned_text = ''.join(e for e in text if e.isalnum())
-        #cleaned_text = text
-        cleaned_text = re.sub(r"[^a-zA-Z0-9 ]", "", text)
+        cleaned_text = text
+        #cleaned_text = re.sub(r"[^a-zA-Z0-9 ]", "", text)
         
         tokenized_text = [tok.text.lower() for tok in spacy_eng.tokenizer(cleaned_text)]
         return tokenized_text
@@ -141,7 +141,6 @@ class AVA(Dataset):
         self.imgs = self.df['filename']
         self.captions = self.df['clean_sentence']
         self.split = self.df['split']
-                
         
         # Initialize and build vocab
         self.vocab = Vocabulary(freq_threshold)
