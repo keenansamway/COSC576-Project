@@ -74,13 +74,13 @@ def test():
     load_checkpoint(torch.load(path), model, optimizer)
     
     ## Generate text from images
-    #print_examples(model, device, dataset)
+    print_examples(model, device, dataset)
     
     ## Generate text from random initialization
-    start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
-    hiddens = torch.rand(1, embed_size).to(device)
-    outputs = model.decoder.generate_text(start_token, hiddens, dataset.vocab)
-    print(outputs)
+    #start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
+    #hiddens = torch.rand(1, embed_size).to(device)
+    #outputs = model.decoder.generate_text(start_token, hiddens, dataset.vocab)
+    #print(outputs)
 
 if __name__ == "__main__":
     test()
