@@ -16,42 +16,53 @@ https://github.com/aladdinpersson/Machine-Learning-Collection/tree/master/ML/Pyt
 https://github.com/yunjey/pytorch-tutorial/tree/master/tutorials/03-advanced/image_captioning
 https://github.com/rammyram/image_captioning/blob/master/Image_Captioning.ipynb
 https://github.com/RoyalSkye/Image-Caption
+https://www.kaggle.com/code/giangtran2408/image-captioning-with-pytorch/notebook
 
 PyTorch has an issue with the backwards pass in LSTM when using batch first on MPS (Apple M1) device
 """
 
 def train():
     # Hyperparameters
-    embed_size = 512
-    hidden_size = 512
+    embed_size = 128
+    hidden_size = 128
     num_layers = 1
-    learning_rate = 1e-3
-    batch_size = 128
+    learning_rate = 3e-4
+    batch_size = 64
     num_workers = 2
     dropout = 0.4
     
     num_epochs = 5
     
     #dataset_to_use = "PCCD"
-    #dataset_to_use = "flickr8k"
-    dataset_to_use = "AVA"
+    dataset_to_use = "flickr8k"
+    #dataset_to_use = "flickr30k"
+    #dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
-        annotation_file = "datasets/PCCD/raw.json"
+        train_file = "datasets/PCCD/raw.json"
         
     elif dataset_to_use == "flickr8k":
         imgs_folder = "datasets/flickr8k/images"
-        annotation_file = "datasets/flickr8k/captions.txt"
+        train_file = "datasets/flickr8k/captions_train.feather"
+        validate_file = "datasets/flickr8k/captions_validate.feather"
+        
+    elif dataset_to_use == "flickr30k":
+        imgs_folder = "datasets/flickr30k/images"
+        train_file = "datasets/flickr30k/captions.txt"
     
     elif dataset_to_use == "AVA":
         imgs_folder = "datasets/AVA/images"
-        annotation_file = "datasets/AVA/CLEAN_AVA_SAMPLE_COMMENTS.feather"
+        train_file = "datasets/AVA/CLEAN_AVA_SAMPLE_COMMENTS.feather"
     
     load_model = False
     save_model = True
     train_CNN = False
     # True False
+    
+    torch.backends.cudnn.benchmark = True
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")           ## Nvidia CUDA Acceleration
+    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")    ## Apple M1 Metal Acceleration
     
     transform = transforms.Compose(
         [
@@ -62,20 +73,27 @@ def train():
         ]
     )
     
-    train_loader, dataset = get_loader(
+    train_loader, train_dataset = get_loader(
         dataset_to_use=dataset_to_use,
         imgs_folder=imgs_folder,
-        annotation_file=annotation_file,
+        annotation_file=train_file,
         transform=transform,
         batch_size=batch_size,
         num_workers=num_workers,
         freq_threshold=5,
     )
-    vocab_size = len(dataset.vocab)
     
-    torch.backends.cudnn.benchmark = True
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")           ## Nvidia CUDA Acceleration
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")    ## Apple M1 Metal Acceleration
+    validate_loader, _ = get_loader(
+        dataset_to_use=dataset_to_use,
+        imgs_folder=imgs_folder,
+        annotation_file=validate_file,
+        transform=transform,
+        batch_size=batch_size,
+        num_workers=num_workers,
+        freq_threshold=5,
+    )
+    
+    vocab_size = len(train_dataset.vocab)
     
     # initialize model, loss, etc
     model = CNNtoLSTM(
@@ -87,7 +105,8 @@ def train():
         train_CNN=train_CNN,
         ).to(device)
     
-    criterion = nn.CrossEntropyLoss(ignore_index=dataset.vocab.stoi["<PAD>"])
+    criterion = nn.CrossEntropyLoss()
+    #criterion = nn.CrossEntropyLoss(ignore_index=dataset.vocab.stoi["<PAD>"])
     
     #optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
@@ -101,41 +120,66 @@ def train():
         step = load_checkpoint(torch.load("CNN-LSTM/runs/checkpoint.pth.tar"), model, optimizer)
         
     model.train()
-    #15e
+
     for epoch in range(num_epochs):    
-        for idx, (imgs, captions, targets) in tqdm(enumerate(train_loader), total=len(train_loader), leave=True):
-            optimizer.zero_grad()
+        train_loss = 0
+        pbar = tqdm(train_loader, desc="Epoch: {}".format(epoch+1), total=len(train_loader), leave=True)
+        for idx, (imgs, raw_captions, lengths) in enumerate(pbar):
+            # imgs: (batch size, 3, 224, 224)
+            # captions: (caption length, batch size)
             
             imgs = imgs.to(device)
-            captions = captions.to(device)
-            targets = targets.to(device)
+            raw_captions = raw_captions.to(device)
             
-            #targets = captions[1:]
-            #captions = captions[:-1]
-            
+            captions = raw_captions[:-1]
+            targets = raw_captions[1:]
+
+            # outputs: (caption length, batch size, vocab size)
             outputs = model(imgs, captions)
-            
-            targets = targets.view(-1)
-            outputs = outputs.view(-1, vocab_size)
+            outputs = outputs.permute(1, 2, 0)
+            targets = targets.permute(1, 0)
             
             loss = criterion(outputs, targets)
+            
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            
+            pbar.set_description(desc="Epoch [{}/[{}] - Train Loss: {:.5f}".format(epoch+1, num_epochs, loss.item()))
+            
+            train_loss = loss.item()
             
             if save_model:
                 writer.add_scalar("Training loss", loss.item(), global_step=step)
             step += 1
+        
+        validate_loss = 0
+        num = 0
+        for idx, (imgs, raw_captions, lengths) in enumerate(validate_loader):
+            imgs = imgs.to(device)
+            raw_captions = raw_captions.to(device)
             
-            loss.backward()
-            optimizer.step()
+            captions = raw_captions[:-1]
+            targets = raw_captions[1:]
             
+            model.eval()
             
+            outputs = model(imgs, captions)
+            outputs = outputs.permute(1, 2, 0)
+            targets = targets.permute(1, 0)
+            
+            loss = criterion(outputs, targets)
+            validate_loss += loss.item()
+            num += 1
+            
+            model.train()
+        avg_validate_loss = validate_loss / num
+        
+        pbar.set_description(desc="Epoch [{}/[{}] - Train Loss: {:.5f} - Validate Loss: {:.5f}".format(epoch+1, num_epochs, loss.item(), avg_validate_loss))
+        
         if save_model:
-            checkpoint = {
-                "state_dict": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "step": step,
-            }
-            save_checkpoint(checkpoint, filename="CNN-LSTM/runs/checkpoint.pth.tar")
-        print("Epoch [{}/[{}], Loss: {:.4f}".format(epoch+1, num_epochs, loss.item()))
-
+            save_checkpoint(model, optimizer, step, filename="CNN-LSTM/runs/checkpoint.pth.tar")
+    
+           
 if __name__ == "__main__":
     train()

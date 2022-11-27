@@ -1,19 +1,32 @@
 import os, sys
+import re, string
 import torch
 import pandas as pd
 from PIL import Image
 import torchvision.transforms as transforms
 
-def save_checkpoint(state, filename):
-    print("-- Saving Checkpoint --")
-    torch.save(state, filename)
+def save_checkpoint(model, optimizer, step, filename):
+    checkpoint = {
+                "state_dict": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "step": step,
+            }
+    torch.save(checkpoint, filename)
+    print("-- Saved Checkpoint --")
     
 def load_checkpoint(checkpoint, model, optimizer):
-    print("-- Loading Checkpoint --")
     model.load_state_dict(checkpoint["state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer"])
     step = checkpoint["step"]
+    print("-- Loaded Checkpoint --")
     return step
+
+regex = re.compile('[%s]' % re.escape(string.punctuation))
+def clean_text(row):
+        # Lower case & remove punctuation
+        row = str(row).strip()
+        row = row.lower()
+        return regex.sub("", row)
 
 def print_examples(model, device, dataset):
     transform = transforms.Compose(

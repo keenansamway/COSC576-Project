@@ -8,26 +8,31 @@ from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
 
 # class EncoderCNN(nn.Module):
 class EncoderCNN(nn.Module):
-    def __init__(self, embed_size, dropout, train_model):
+    def __init__(self, embed_size, train_model):
         super(EncoderCNN, self).__init__()
         self.train_model = train_model
         
         self.resnet = models.resnet50(weights=ResNet50_Weights.DEFAULT)
         self.in_features = self.resnet.fc.in_features
         
+        self.resnet = nn.Sequential(*(list(self.resnet.children())[:-1]))
+
         for param in self.resnet.parameters():
             param.requires_grad = train_model
         
-        self.resnet = nn.Sequential(*(list(self.resnet.children())[:-1]))
         self.linear = nn.Linear(self.in_features, embed_size)
+        #self.relu = nn.ReLU()
                 
     def forward(self, images):
         # images: (batch_size, 3, 224, 224)
         
         features = self.resnet(images)                      # features: (batch_size, 2048, 1, 1)
         features = features.view(features.size(0), -1)      # features: (batch_size, 2048)
+        #resnet (minus final layer) out
+        
         features = self.linear(features)                    # features: (batch_size, embed_size)
-
+        #features = self.relu(features)
+        
         return features
 
 # Language Model
@@ -46,6 +51,7 @@ class DecoderLSTM(nn.Module):
         self.embed = nn.Embedding(
             num_embeddings=vocab_size, 
             embedding_dim=embed_size,
+            padding_idx=0,
             )
         
         # LSTM - https://pytorch.org/docs/stable/generated/torch.nn.LSTM.html
@@ -62,30 +68,40 @@ class DecoderLSTM(nn.Module):
             )
         
         # Fully Connected
+        '''
         # Input:  (sequence length, batch size, hidden size)
         # Output: (sequence length, batch size, vocab size)
-        self.linear = nn.Linear(
+        self.fc = nn.Linear(
             in_features=hidden_size, 
             out_features=vocab_size,
             )
+        '''
+        self.fc = nn.Sequential(
+            nn.Linear(hidden_size, hidden_size*2),
+            nn.ReLU(),
+            nn.Linear(hidden_size*2, hidden_size*4),
+            nn.ReLU(),
+            nn.Linear(hidden_size*4, hidden_size*8),
+            nn.ReLU(),
+            nn.Linear(hidden_size*8, vocab_size)
+        )
     
     def forward(self, features, captions):
         # features: (batch_size, embed_size)
         # captions: (caption_length, batch_size)
         
         embeddings = self.embed(captions)
-        state = torch.stack([features]*(self.num_layers), dim=0)
-        states = (state, state)
-
-        #packed = pack_padded_sequence(embeddings, lengths, batch_first=False, enforce_sorted=True)    
+        states = self.init_hidden(features)
         
         lstm_out, _ = self.lstm(embeddings, states)
-        linear_outputs = self.linear(lstm_out)
-        
-        #outputs = linear_outputs.reshape(-1, self.vocab_size)
-        
-        return linear_outputs
+        fc_out = self.fc(lstm_out)
+                
+        return fc_out
     
+    def init_hidden(self, features):
+        state = torch.stack([features]*(self.num_layers), dim=0)
+        return (state, state)
+        
     ## REVIEW
     def generate_text(self, start_token, hiddens, vocabulary, max_length=50):
         result_caption = [start_token.item()]
@@ -100,9 +116,9 @@ class DecoderLSTM(nn.Module):
 
             for _ in range(max_length):
                 lstm_out, states = self.lstm(lstm_in, states)
-                linear_out = self.linear(lstm_out)
+                fc_out = self.fc(lstm_out)
                 
-                predicted = torch.argmax(linear_out, dim=1)
+                predicted = torch.argmax(fc_out, dim=1)
                 result_caption.append(predicted.item())
                 
                 lstm_in = self.embed(predicted)
@@ -116,7 +132,7 @@ class DecoderLSTM(nn.Module):
 class CNNtoLSTM(nn.Module):
     def __init__(self, embed_size, hidden_size, vocab_size, num_layers, dropout, train_CNN=False):
         super(CNNtoLSTM, self).__init__()
-        self.encoder = EncoderCNN(embed_size, dropout, train_CNN)
+        self.encoder = EncoderCNN(embed_size, train_CNN)
         self.decoder = DecoderLSTM(embed_size, hidden_size, vocab_size, num_layers, dropout)
     
     def forward(self, images, captions):
@@ -136,14 +152,13 @@ class CNNtoLSTM(nn.Module):
             lstm_in = self.decoder.embed(start_token)
             
             features = self.encoder(image).squeeze(0)
-            state = torch.stack([features]*(self.decoder.num_layers), dim=0)
-            states = (state, state)
+            states = self.decoder.init_hidden(features)
 
             for _ in range(max_length):
                 lstm_out, states = self.decoder.lstm(lstm_in, states)
-                linear_out = self.decoder.linear(lstm_out)
+                fc_out = self.decoder.fc(lstm_out)
                 
-                predicted = torch.argmax(linear_out, dim=1)
+                predicted = torch.argmax(fc_out, dim=1)
                 result_caption.append(predicted.item())
                 
                 lstm_in = self.decoder.embed(predicted)

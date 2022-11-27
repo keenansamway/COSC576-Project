@@ -4,14 +4,14 @@ import torch.nn as nn
 import torch.optim as optim
 import torchvision.transforms as transforms
 from utils import print_examples, save_checkpoint, load_checkpoint
-from get_loader import get_loader, Flickr8k, PCCD, AVA
+from get_loader import get_loader, Flickr8k, Flickr30k, PCCD, AVA
 from model import CNNtoLSTM, DecoderLSTM
 
 
 def test():
     # Hyperparameters
-    embed_size = 512
-    hidden_size = 512
+    embed_size = 256
+    hidden_size = 256
     num_layers = 1
     learning_rate = 1e-3
     dropout = 0.4
@@ -19,7 +19,8 @@ def test():
     
     #dataset_to_use = "PCCD"
     #dataset_to_use = "flickr8k"
-    dataset_to_use = "AVA"
+    dataset_to_use = "flickr30k"
+    #dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -30,6 +31,11 @@ def test():
         imgs_folder = "datasets/flickr8k/test_examples"
         annotation_file = "datasets/flickr8k/captions.txt"
         test_file = "datasets/flickr8k/flickr8k_test.txt"
+    
+    elif dataset_to_use == "flickr30k":
+        imgs_folder = "datasets/flickr30k/test_examples"
+        annotation_file = "datasets/flickr30k/captions.txt"
+        test_file = "datasets/flickr30k/flickr30k_test.txt"
     
     elif dataset_to_use == "AVA":
         imgs_folder = "datasets/AVA/images"
@@ -52,6 +58,8 @@ def test():
         dataset = PCCD(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     elif dataset_to_use == "flickr8k":
         dataset = Flickr8k(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
+    elif dataset_to_use == "flickr30k":
+        dataset = Flickr30k(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     elif dataset_to_use == "AVA":
         dataset = AVA(imgs_folder, annotation_file, test_file, transform=transform, freq_threshold=freq_threshold)
     
