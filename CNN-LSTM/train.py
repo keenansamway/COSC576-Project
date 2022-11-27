@@ -153,6 +153,8 @@ def train():
                 writer.add_scalar("Training loss", loss.item(), global_step=step)
             step += 1
         
+        # Try to get validation loss working
+        """
         validate_loss = 0
         num = 0
         for idx, (imgs, raw_captions, lengths) in enumerate(validate_loader):
@@ -176,6 +178,7 @@ def train():
         avg_validate_loss = validate_loss / num
         
         pbar.set_description(desc="Epoch [{}/[{}] - Train Loss: {:.5f} - Validate Loss: {:.5f}".format(epoch+1, num_epochs, loss.item(), avg_validate_loss))
+        """
         
         if save_model:
             save_checkpoint(model, optimizer, step, filename="CNN-LSTM/runs/checkpoint.pth.tar")
