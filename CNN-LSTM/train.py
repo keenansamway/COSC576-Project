@@ -83,7 +83,7 @@ def train():
         freq_threshold=5,
     )
     
-    validate_loader, _ = get_loader(
+    validate_loader, validate_dataset = get_loader(
         dataset_to_use=dataset_to_use,
         imgs_folder=imgs_folder,
         annotation_file=validate_file,
@@ -123,6 +123,7 @@ def train():
 
     for epoch in range(num_epochs):    
         train_loss = 0
+        train_n = 0
         pbar = tqdm(train_loader, desc="Epoch: {}".format(epoch+1), total=len(train_loader), leave=True)
         for idx, (imgs, raw_captions, lengths) in enumerate(pbar):
             # imgs: (batch size, 3, 224, 224)
@@ -147,16 +148,19 @@ def train():
             
             pbar.set_description(desc="Epoch [{}/[{}] - Train Loss: {:.5f}".format(epoch+1, num_epochs, loss.item()))
             
-            train_loss = loss.item()
+            train_loss += loss.item()
+            train_n += 1
             
             if save_model:
                 writer.add_scalar("Training loss", loss.item(), global_step=step)
             step += 1
         
-        # Try to get validation loss working
-        """
+        avg_train_loss = train_loss / train_n
+        
+        # Calculate validation loss
         validate_loss = 0
-        num = 0
+        validate_n = 0
+        model.eval()
         for idx, (imgs, raw_captions, lengths) in enumerate(validate_loader):
             imgs = imgs.to(device)
             raw_captions = raw_captions.to(device)
@@ -164,21 +168,23 @@ def train():
             captions = raw_captions[:-1]
             targets = raw_captions[1:]
             
-            model.eval()
-            
             outputs = model(imgs, captions)
             outputs = outputs.permute(1, 2, 0)
             targets = targets.permute(1, 0)
             
             loss = criterion(outputs, targets)
-            validate_loss += loss.item()
-            num += 1
             
-            model.train()
-        avg_validate_loss = validate_loss / num
+            validate_loss += loss.item()
+            validate_n += 1   
+        model.train()
         
-        pbar.set_description(desc="Epoch [{}/[{}] - Train Loss: {:.5f} - Validate Loss: {:.5f}".format(epoch+1, num_epochs, loss.item(), avg_validate_loss))
-        """
+        avg_validate_loss = validate_loss / validate_n
+        
+        if save_model:
+            writer.add_scalar("Validation loss", avg_validate_loss, global_step=step)
+        
+        print("             - Avg Train Loss: {:.5f} - Validate Loss: {:.5f}".format(epoch+1, num_epochs, avg_train_loss, avg_validate_loss))
+        
         
         if save_model:
             save_checkpoint(model, optimizer, step, filename="CNN-LSTM/runs/checkpoint.pth.tar")
