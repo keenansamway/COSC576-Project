@@ -29,13 +29,13 @@ def clean_text(row):
         return regex.sub("", row)
 
 def print_examples(model, device, dataset):
-    transform = transforms.Compose(
-        [
-            transforms.Resize((224,224)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5)),
-        ]
-    )
+    # transform = transforms.Compose(
+    #     [
+    #         transforms.Resize((224,224)),
+    #         transforms.ToTensor(),
+    #         transforms.Normalize((0.5,0.5,0.5),(0.5,0.5,0.5)),
+    #     ]
+    # )
     
     filename_loc = dataset.test_file
     images_loc = dataset.imgs_dir
@@ -48,7 +48,7 @@ def print_examples(model, device, dataset):
     for i, dir in enumerate(filename_list):
         path = os.path.join(images_loc, dir)
         start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
-        test_img = transform(Image.open(path).convert("RGB")).unsqueeze(0)
+        test_img = dataset.transform(Image.open(path).convert("RGB")).unsqueeze(0)
         print(f"Example {i}) OUTPUT: " + " ".join(model.caption_image(start_token, test_img.to(device), dataset.vocab)))
         if i > 5:
             break

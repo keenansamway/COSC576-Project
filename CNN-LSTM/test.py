@@ -13,13 +13,13 @@ def test():
     embed_size = 256
     hidden_size = 256
     num_layers = 1
-    learning_rate = 1e-3
-    dropout = 0.4
+    learning_rate = 3e-4
+    dropout = 0.2
     
     
     #dataset_to_use = "PCCD"
-    #dataset_to_use = "flickr8k"
-    dataset_to_use = "flickr30k"
+    dataset_to_use = "flickr8k"
+    #dataset_to_use = "flickr30k"
     #dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
@@ -29,7 +29,7 @@ def test():
         
     elif dataset_to_use == "flickr8k":
         imgs_folder = "datasets/flickr8k/test_examples"
-        annotation_file = "datasets/flickr8k/captions.txt"
+        annotation_file = "datasets/flickr8k/captions_train.feather"
         test_file = "datasets/flickr8k/flickr8k_test.txt"
     
     elif dataset_to_use == "flickr30k":
@@ -44,10 +44,10 @@ def test():
     
     transform = transforms.Compose(
         [
-            transforms.Resize((356,356)),
+            transforms.Resize((232,232)),
             transforms.RandomCrop((224,224)),
             transforms.ToTensor(),
-            transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)),
+            transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225)),
         ]
     )
     

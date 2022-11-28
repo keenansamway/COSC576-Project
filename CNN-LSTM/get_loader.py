@@ -67,9 +67,9 @@ class Flickr8k(Dataset):
         self.transform = transform
         
         self.imgs = self.df['image']
-        self.captions = self.df['captions'].apply(clean_text)
+        self.captions = self.df['caption'].apply(clean_text)
         
-        self.df['length'] = self.df['captions'].apply(lambda row: len(row.strip().split()))
+        self.df['length'] = self.df['caption'].apply(lambda row: len(row.strip().split()))
         
         self.vocab = Vocabulary(freq_threshold)
         self.vocab.build_vocabulary(self.captions.tolist())

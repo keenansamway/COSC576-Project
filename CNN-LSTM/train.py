@@ -21,17 +21,18 @@ https://www.kaggle.com/code/giangtran2408/image-captioning-with-pytorch/notebook
 PyTorch has an issue with the backwards pass in LSTM when using batch first on MPS (Apple M1) device
 """
 
+
 def train():
     # Hyperparameters
-    embed_size = 128
-    hidden_size = 128
+    embed_size = 256
+    hidden_size = 256
     num_layers = 1
     learning_rate = 3e-4
     batch_size = 64
     num_workers = 2
-    dropout = 0.4
+    dropout = 0.2
     
-    num_epochs = 5
+    num_epochs = 10
     
     #dataset_to_use = "PCCD"
     dataset_to_use = "flickr8k"
@@ -66,10 +67,10 @@ def train():
     
     transform = transforms.Compose(
         [
-            transforms.Resize((356,356)),
+            transforms.Resize((232,232)),
             transforms.RandomCrop((224,224)),
             transforms.ToTensor(),
-            transforms.Normalize((0.5,0.5,0.5), (0.5,0.5,0.5)),
+            transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225)),
         ]
     )
     
@@ -105,8 +106,8 @@ def train():
         train_CNN=train_CNN,
         ).to(device)
     
-    criterion = nn.CrossEntropyLoss()
-    #criterion = nn.CrossEntropyLoss(ignore_index=dataset.vocab.stoi["<PAD>"])
+    #criterion = nn.CrossEntropyLoss()
+    criterion = nn.CrossEntropyLoss(ignore_index=train_dataset.vocab.stoi["<PAD>"])
     
     #optimizer = optim.Adam(model.parameters(), lr=learning_rate)
     optimizer = optim.AdamW(model.parameters(), lr=learning_rate)
@@ -122,8 +123,8 @@ def train():
     model.train()
 
     for epoch in range(num_epochs):    
-        train_loss = 0
-        train_n = 0
+        #train_loss = 0
+        #train_n = 0
         pbar = tqdm(train_loader, desc="Epoch: {}".format(epoch+1), total=len(train_loader), leave=True)
         for idx, (imgs, raw_captions, lengths) in enumerate(pbar):
             # imgs: (batch size, 3, 224, 224)
@@ -148,16 +149,17 @@ def train():
             
             pbar.set_description(desc="Epoch [{}/[{}] - Train Loss: {:.5f}".format(epoch+1, num_epochs, loss.item()))
             
-            train_loss += loss.item()
-            train_n += 1
+            #train_loss += loss.item()
+            #train_n += 1
             
             if save_model:
                 writer.add_scalar("Training loss", loss.item(), global_step=step)
             step += 1
         
-        avg_train_loss = train_loss / train_n
+        #avg_train_loss = train_loss / train_n
         
-        # Calculate validation loss
+        # Calculate validation loss # NEEDS UPDATING
+        """
         validate_loss = 0
         validate_n = 0
         model.eval()
@@ -183,8 +185,8 @@ def train():
         if save_model:
             writer.add_scalar("Validation loss", avg_validate_loss, global_step=step)
         
-        print("             - Avg Train Loss: {:.5f} - Validate Loss: {:.5f}".format(epoch+1, num_epochs, avg_train_loss, avg_validate_loss))
-        
+        print("             - Avg Train Loss: {:.5f} - Validate Loss: {:.5f}".format(avg_train_loss, avg_validate_loss))
+        """
         
         if save_model:
             save_checkpoint(model, optimizer, step, filename="CNN-LSTM/runs/checkpoint.pth.tar")
