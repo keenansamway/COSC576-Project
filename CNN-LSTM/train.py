@@ -35,9 +35,9 @@ def train():
     num_epochs = 10
     
     #dataset_to_use = "PCCD"
-    dataset_to_use = "flickr8k"
+    #dataset_to_use = "flickr8k"
     #dataset_to_use = "flickr30k"
-    #dataset_to_use = "AVA"
+    dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -46,7 +46,7 @@ def train():
     elif dataset_to_use == "flickr8k":
         imgs_folder = "datasets/flickr8k/images"
         train_file = "datasets/flickr8k/captions_train.feather"
-        validate_file = "datasets/flickr8k/captions_validate.feather"
+        #validate_file = "datasets/flickr8k/captions_validate.feather"
         
     elif dataset_to_use == "flickr30k":
         imgs_folder = "datasets/flickr30k/images"
@@ -83,7 +83,7 @@ def train():
         num_workers=num_workers,
         freq_threshold=5,
     )
-    
+    """
     validate_loader, validate_dataset = get_loader(
         dataset_to_use=dataset_to_use,
         imgs_folder=imgs_folder,
@@ -93,7 +93,7 @@ def train():
         num_workers=num_workers,
         freq_threshold=5,
     )
-    
+    """
     vocab_size = len(train_dataset.vocab)
     
     # initialize model, loss, etc
