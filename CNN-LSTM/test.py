@@ -64,8 +64,8 @@ def test(path):
     
     vocab_size = len(dataset.vocab)
 
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")           ## Nvidia CUDA Acceleration
-    device = torch.device("mps" if torch.backends.mps.is_available() else "cpu")    ## Apple M1 Metal Acceleration
+    device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
+    # Nvidia CUDA Acceleration or Apple M1 Metal Acceleration or CPU 
 
     # initialize model, loss, etc
     model = CNNtoLSTM(
