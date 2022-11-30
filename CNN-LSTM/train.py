@@ -32,17 +32,22 @@ def train(path):
     num_layers = 1
     learning_rate = 1e-4
     batch_size = 64
-    num_workers = 2
+    num_workers = 4
     dropout = 0.2
     
     start_epochs = 0
-    num_epochs = 10
-    save_every_x_epochs = 10
+    num_epochs = 5
+    save_every_x_epochs = 1
+    
+    load_model = False
+    save_model = True
+    train_CNN = False
+    # True False
     
     #dataset_to_use = "PCCD"
-    dataset_to_use = "flickr8k"
+    #dataset_to_use = "flickr8k"
     #dataset_to_use = "flickr30k"
-    #dataset_to_use = "AVA"
+    dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -60,11 +65,6 @@ def train(path):
     elif dataset_to_use == "AVA":
         imgs_folder = "datasets/AVA/images"
         train_file = "datasets/AVA/CLEAN_AVA_SAMPLE_COMMENTS.feather"
-    
-    load_model = False
-    save_model = True
-    train_CNN = False
-    # True False
     
     torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
