@@ -220,7 +220,7 @@ class MyCollate:
         lengths = [len(cap) for cap in captions]
 
         # imgs:    (batch size, 3, 224, 224)
-        # targets: (sequence length, batch size)
+        # captions: (sequence length, batch size)
         # lengths: (batch size)
         return imgs, captions, lengths
 

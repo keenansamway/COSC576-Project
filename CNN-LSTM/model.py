@@ -21,6 +21,14 @@ class EncoderCNN(nn.Module):
             param.requires_grad = train_model
         
         self.linear = nn.Linear(self.in_features, embed_size)
+        """ 
+        self.fc = nn.Sequential(
+            nn.Linear(self.in_features, embed_size//2),
+            nn.ReLU(),
+            nn.Linear(embed_size//2, embed_size),
+            nn.ReLU(),
+        )
+         """
         #self.relu = nn.ReLU()
                 
     def forward(self, images):
@@ -28,10 +36,10 @@ class EncoderCNN(nn.Module):
         
         features = self.resnet(images)                      # features: (batch_size, 2048, 1, 1)
         features = features.view(features.size(0), -1)      # features: (batch_size, 2048)
-        #resnet (minus final layer) out
+        #resnet (minus final layer) output
         
         features = self.linear(features)                    # features: (batch_size, embed_size)
-        #features = self.relu(features)
+        #features = self.fc(features)
         
         return features
 
@@ -68,9 +76,9 @@ class DecoderLSTM(nn.Module):
             )
         
         # Fully Connected
-        '''
         # Input:  (sequence length, batch size, hidden size)
         # Output: (sequence length, batch size, vocab size)
+        '''
         self.fc = nn.Linear(
             in_features=hidden_size, 
             out_features=vocab_size,

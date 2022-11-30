@@ -1,6 +1,7 @@
 import os, sys
 import torch
 import torch.nn as nn
+
 import torch.optim as optim
 import torchvision.transforms as transforms
 from utils import print_examples, save_checkpoint, load_checkpoint
@@ -8,12 +9,12 @@ from get_loader import get_loader, Flickr8k, Flickr30k, PCCD, AVA
 from model import CNNtoLSTM, DecoderLSTM
 
 
-def test():
+def test(path):
     # Hyperparameters
-    embed_size = 256
-    hidden_size = 256
+    embed_size = 512
+    hidden_size = 512
     num_layers = 1
-    learning_rate = 3e-4
+    learning_rate = 1e-4
     dropout = 0.2
     
     
@@ -50,8 +51,6 @@ def test():
             transforms.Normalize((0.485,0.456,0.406), (0.229,0.224,0.225)),
         ]
     )
-    
-    path = "CNN-LSTM/runs/checkpoint.pth.tar"
 
     freq_threshold = 5
     if dataset_to_use == "PCCD":
@@ -91,4 +90,6 @@ def test():
     #print(outputs)
 
 if __name__ == "__main__":
-    test()
+    path = f"CNN-LSTM/runs/checkpoint{130}.pth.tar"
+
+    test(path)

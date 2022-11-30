@@ -48,8 +48,8 @@ def print_examples(model, device, dataset):
     for i, dir in enumerate(filename_list):
         path = os.path.join(images_loc, dir)
         start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
-        test_img = transform(Image.open(path).convert("RGB")).unsqueeze(0)
-        print(f"Example {i}) OUTPUT: " + " ".join(model.caption_image(start_token, test_img.to(device), dataset.vocab)))
+        test_img = transform(Image.open(path).convert("RGB")).unsqueeze(0).to(device)
+        print(f"Example {i+1}) OUTPUT: " + " ".join(model.caption_image(start_token, test_img, dataset.vocab)))
         # if i > 5:
         #     break
         
