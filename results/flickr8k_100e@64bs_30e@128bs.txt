@@ -1,0 +1,38 @@
+# Hyperparameters
+    embed_size = 512
+    hidden_size = 512
+    num_layers = 1
+    learning_rate = 1e-4
+    batch_size = 64 100e -> 128 30e
+    num_workers = 2
+    dropout = 0.2
+
+2.5min/e
+
+10e
+~2.6 loss
+
+Example 0) OUTPUT: <SOS> a man in a red jacket is standing in the snow <EOS>
+Example 1) OUTPUT: <SOS> a man in a red jacket is standing in a <UNK> <EOS>
+Example 2) OUTPUT: <SOS> a man in a red jacket is standing in a <UNK> <EOS>
+Example 3) OUTPUT: <SOS> a dog is running through the snow <EOS>
+Example 4) OUTPUT: <SOS> a man in a red jacket is riding a bike in the woods <EOS>
+
+
+100e
+~0.9 loss
+
+Example 0) OUTPUT: <SOS> a man is <UNK> down a cliff over the ocean <EOS>
+Example 1) OUTPUT: <SOS> a man in a red truck is staring out the <UNK> window <EOS>
+Example 2) OUTPUT: <SOS> a little girl in a hat climbing a kiddie wall <EOS>
+Example 3) OUTPUT: <SOS> a dog is running on the lawn <EOS>
+Example 4) OUTPUT: <SOS> a man is climbing a cliff high in the air <EOS>
+
+130e
+~0.8 loss
+Example 1) OUTPUT: <SOS> a man is kayaking in the ocean on an orange kayak <EOS>
+Example 2) OUTPUT: <SOS> a man in a red truck is staring out the <UNK> window <EOS>
+Example 3) OUTPUT: <SOS> a boy in a blue shirt is running <EOS>
+Example 4) OUTPUT: <SOS> a dog is running in the snow <EOS>
+Example 5) OUTPUT: <SOS> a man in a red shirt climbs a rock in the background   a tree in the foreground <EOS>
+
