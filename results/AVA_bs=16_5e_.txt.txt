@@ -1,0 +1,19 @@
+# Hyperparameters
+    embed_size = 512
+    hidden_size = 512
+    num_layers = 1
+    learning_rate = 1e-4
+    batch_size = 16
+    num_workers = 2
+    dropout = 0.2
+
+5e @ ~1h5m / e for bs=16
+~3.8 loss
+
+Example 1) OUTPUT: <SOS> i like the composition and the composition <EOS>
+Example 2) OUTPUT: <SOS> i like the composition and the composition but i think the lighting is a little too harsh <EOS>
+Example 3) OUTPUT: <SOS> i like the composition but the lighting is a little too harsh <EOS>
+Example 4) OUTPUT: <SOS> i like the idea but the lighting is a little harsh <EOS>
+Example 5) OUTPUT: <SOS> nice shot <EOS>
+Example 6) OUTPUT: <SOS> i like the colors and the composition <EOS>
+Example 7) OUTPUT: <SOS> i like the composition but the image is a little too dark for my taste <EOS>
