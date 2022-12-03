@@ -16,6 +16,7 @@ Used code from:
 https://github.com/aladdinpersson/Machine-Learning-Collection/tree/master/ML/Pytorch/more_advanced/image_captioning
 https://github.com/yunjey/pytorch-tutorial/tree/master/tutorials/03-advanced/image_captioning
 https://github.com/rammyram/image_captioning/blob/master/Image_Captioning.ipynb
+https://github.com/tatwan/image-captioning-pytorch//
 
 With attention and/or transformers
 https://github.com/RoyalSkye/Image-Caption
