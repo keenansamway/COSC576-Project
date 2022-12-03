@@ -21,15 +21,6 @@ class EncoderCNN(nn.Module):
             param.requires_grad = train_model
         
         self.linear = nn.Linear(self.in_features, embed_size)
-        """ 
-        self.fc = nn.Sequential(
-            nn.Linear(self.in_features, embed_size//2),
-            nn.ReLU(),
-            nn.Linear(embed_size//2, embed_size),
-            nn.ReLU(),
-        )
-         """
-        #self.relu = nn.ReLU()
                 
     def forward(self, images):
         # images: (batch_size, 3, 224, 224)
@@ -39,7 +30,6 @@ class EncoderCNN(nn.Module):
         #resnet (minus final layer) output
         
         features = self.linear(features)                    # features: (batch_size, embed_size)
-        #features = self.fc(features)
         
         return features
 

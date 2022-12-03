@@ -30,24 +30,24 @@ def train(path):
     embed_size = 512
     hidden_size = 512
     num_layers = 1
-    learning_rate = 1e-4
-    batch_size = 64
+    learning_rate = 1e-3
+    batch_size = 32
     num_workers = 2
     dropout = 0.2
     
-    start_epochs = 5
-    num_epochs = 8
+    start_epochs = 0
+    num_epochs = 10
     save_every_x_epochs = 1
     
-    load_model = True
+    load_model = False
     save_model = True
     train_CNN = False
     # True False
     
     #dataset_to_use = "PCCD"
-    #dataset_to_use = "flickr8k"
+    dataset_to_use = "flickr8k"
     #dataset_to_use = "flickr30k"
-    dataset_to_use = "AVA"
+    #dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
