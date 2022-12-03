@@ -17,11 +17,10 @@ def test(path):
     learning_rate = 1e-4
     dropout = 0.2
     
-    
     #dataset_to_use = "PCCD"
-    dataset_to_use = "flickr8k"
+    #dataset_to_use = "flickr8k"
     #dataset_to_use = "flickr30k"
-    #dataset_to_use = "AVA"
+    dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -81,15 +80,15 @@ def test(path):
     load_checkpoint(torch.load(path), model, optimizer)
     
     ## Generate text from images
-    print_examples(model, device, dataset)
+    #print_examples(model, device, dataset)
     
     ## Generate text from random initialization
-    #start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
-    #hiddens = torch.rand(1, embed_size).to(device)
-    #outputs = model.decoder.generate_text(start_token, hiddens, dataset.vocab)
-    #print(outputs)
+    start_token = torch.tensor(dataset.vocab.stoi["<SOS>"]).to(device)
+    hiddens = torch.rand(1, embed_size).to(device)
+    outputs = model.decoder.generate_text(start_token, hiddens, dataset.vocab)
+    print(outputs)
 
 if __name__ == "__main__":
-    path = f"CNN-LSTM/runs/checkpoint{130}.pth.tar"
+    path = f"CNN-LSTM/runs/checkpoint{8}.pth.tar"
 
     test(path)

@@ -32,14 +32,14 @@ def train(path):
     num_layers = 1
     learning_rate = 1e-4
     batch_size = 64
-    num_workers = 4
+    num_workers = 2
     dropout = 0.2
     
-    start_epochs = 0
-    num_epochs = 5
+    start_epochs = 5
+    num_epochs = 8
     save_every_x_epochs = 1
     
-    load_model = False
+    load_model = True
     save_model = True
     train_CNN = False
     # True False
@@ -123,7 +123,7 @@ def train(path):
     step = 0
     
     if load_model:
-        step = load_checkpoint(torch.load(path), model, optimizer)
+        step = load_checkpoint(torch.load(path, map_location=torch.device(device)), model, optimizer)
         
     model.train()
 
@@ -198,5 +198,5 @@ def train(path):
     
            
 if __name__ == "__main__":
-    path = f"CNN-LSTM/runs/checkpoint{100}.pth.tar"
+    path = f"CNN-LSTM/runs/checkpoint{5}.pth.tar"
     train(path)

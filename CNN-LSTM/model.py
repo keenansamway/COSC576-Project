@@ -108,6 +108,7 @@ class DecoderLSTM(nn.Module):
     
     def init_hidden(self, features):
         state = torch.stack([features]*(self.num_layers), dim=0)
+        # state: (num layers, batch size, hidden size)
         return (state, state)
         
     ## REVIEW
