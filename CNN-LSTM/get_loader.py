@@ -211,13 +211,9 @@ class MyCollate:
         imgs = torch.stack(imgs)
         
         captions = [item[1] for item in batch]
-        #targets = [item[1][1:] for item in batch]
-        
-        captions = pad_sequence(captions, batch_first=False, padding_value=self.pad_idx)
-        #targets = pad_sequence(targets, batch_first=False, padding_value=self.pad_idx)
-        #packed_targets = pack_padded_sequence(targets, batch_first=False, enforce_sorted=False)
-
         lengths = [len(cap) for cap in captions]
+
+        captions = pad_sequence(captions, batch_first=False, padding_value=self.pad_idx)
 
         # imgs:    (batch size, 3, 224, 224)
         # captions: (sequence length, batch size)
