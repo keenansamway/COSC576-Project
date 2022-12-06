@@ -3,7 +3,7 @@ import torch
 import torch.nn as nn
 import torchvision.models as models
 from torchvision.models import ResNet50_Weights
-from torch.nn.utils.rnn import pad_sequence, pack_padded_sequence
+from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 
 
 # class EncoderCNN(nn.Module):
@@ -68,7 +68,7 @@ class DecoderLSTM(nn.Module):
         # Fully Connected
         # Input:  (sequence length, batch size, hidden size)
         # Output: (sequence length, batch size, vocab size)
-        '''
+        
         self.fc = nn.Linear(
             in_features=hidden_size, 
             out_features=vocab_size,
@@ -83,6 +83,7 @@ class DecoderLSTM(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size*8, vocab_size)
         )
+        '''
     
     def forward(self, features, captions):
         # features: (batch_size, embed_size)
@@ -91,7 +92,10 @@ class DecoderLSTM(nn.Module):
         embeddings = self.embed(captions)
         states = self.init_hidden(features)
         
-        lstm_out, _ = self.lstm(embeddings, states)
+        #packed = pack_padded_sequence(embeddings, lengths, batch_first=False, enforce_sorted=False)
+        lstm_out, states = self.lstm(embeddings, states)
+        #unpacked, _ = pad_packed_sequence(lstm_out, batch_first=False)
+        
         fc_out = self.fc(lstm_out)
                 
         return fc_out
@@ -109,7 +113,7 @@ class DecoderLSTM(nn.Module):
         with torch.no_grad():
             lstm_in = self.embed(start_token)
             
-            features = hiddens.squeeze(0)
+            features = hiddens
             state = torch.stack([features]*(self.num_layers), dim=0)
             states = (state, state)
 
