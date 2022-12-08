@@ -12,7 +12,7 @@ from model import CNNtoLSTM, DecoderLSTM
 def test(path):
     # Hyperparameters
     embed_size = 256
-    hidden_size = 512
+    hidden_size = 256
     num_layers = 1
     learning_rate = 1e-3
     dropout = 0.2
@@ -39,7 +39,7 @@ def test(path):
     
     elif dataset_to_use == "AVA":
         imgs_folder = "datasets/AVA/images"
-        annotation_file = "datasets/AVA/CLEAN_AVA_SAMPLE_COMMENTS.feather"
+        annotation_file = "datasets/AVA/AVA_sample_10percent.feather"
         test_file = "datasets/AVA/AVA_test.txt"
     
     transform = transforms.Compose(
@@ -89,6 +89,6 @@ def test(path):
     #print(outputs)
 
 if __name__ == "__main__":
-    path = f"CNN-LSTM/runs/checkpoint{3}.pth.tar"
+    path = f"CNN-LSTM/runs/checkpoint{10}.pth.tar"
 
     test(path)
