@@ -6,9 +6,8 @@ import torch.optim as optim
 import torchvision.transforms as transforms
 from torch.utils.tensorboard import SummaryWriter
 from tqdm import tqdm
-from utils import print_examples, save_checkpoint, load_checkpoint
+from utils import save_checkpoint, load_checkpoint
 from get_loader import get_loader
-from torch.nn.utils.rnn import pad_sequence
 from model import CNNtoLSTM, EncoderCNN, DecoderLSTM
 
 """
@@ -28,8 +27,8 @@ PyTorch has an issue with the backwards pass in LSTM when using batch first on M
 
 def train(path):
     # Hyperparameters
-    embed_size = 512
-    hidden_size = 512
+    embed_size = 256
+    hidden_size = 256
     num_layers = 1
     learning_rate = 1e-3
     batch_size = 32
@@ -37,8 +36,9 @@ def train(path):
     dropout = 0.2
     
     start_epochs = 0
-    num_epochs = 10
+    num_epochs = 2
     save_every_x_epochs = 1
+    save_every_x_steps = 5000
     
     load_model = False
     save_model = True
@@ -46,9 +46,9 @@ def train(path):
     # True False
     
     #dataset_to_use = "PCCD"
-    dataset_to_use = "flickr8k"
+    #dataset_to_use = "flickr8k"
     #dataset_to_use = "flickr30k"
-    #dataset_to_use = "AVA"
+    dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
@@ -65,7 +65,8 @@ def train(path):
     
     elif dataset_to_use == "AVA":
         imgs_folder = "datasets/AVA/images"
-        train_file = "datasets/AVA/CLEAN_AVA_SAMPLE_COMMENTS.feather"
+        #train_file = "datasets/AVA/AVA_sample_10percent.feather"
+        train_file = "datasets/AVA/CLEAN_AVA_FULL_COMMENTS.feather"
     
     torch.backends.cudnn.benchmark = True
     device = torch.device("cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu")
@@ -137,10 +138,9 @@ def train(path):
             # captions: (caption length, batch size)
             
             imgs = imgs.to(device)
-            raw_captions = raw_captions.to(device)
             
-            captions = raw_captions[:-1]
-            targets = raw_captions[1:]
+            captions = raw_captions[:-1].to(device)
+            targets = raw_captions[1:].to(device)
 
             # outputs: (caption length, batch size, vocab size)
             outputs = model(imgs, captions)
@@ -161,6 +161,14 @@ def train(path):
             if save_model:
                 writer.add_scalar("Training loss", loss.item(), global_step=step)
             step += 1
+            
+            if step % save_every_x_steps == 0:
+                checkpoint = {
+                        "state_dict": model.state_dict(),
+                        "optimizer": optimizer.state_dict(),
+                        "step": step,
+                    }
+                save_checkpoint(checkpoint, filename=f"CNN-LSTM/runs/checkpoint{math.ceil((epoch+1)/save_every_x_epochs)*save_every_x_epochs}_{step}.pth.tar")
         
         #avg_train_loss = train_loss / train_n
         
@@ -195,9 +203,14 @@ def train(path):
         """
         
         if save_model:
-            save_checkpoint(model, optimizer, step, filename=f"CNN-LSTM/runs/checkpoint{math.ceil((epoch+1)/save_every_x_epochs)*save_every_x_epochs}.pth.tar")
+            checkpoint = {
+                    "state_dict": model.state_dict(),
+                    "optimizer": optimizer.state_dict(),
+                    "step": step,
+                }
+            save_checkpoint(checkpoint, filename=f"CNN-LSTM/runs/checkpoint{math.ceil((epoch+1)/save_every_x_epochs)*save_every_x_epochs}.pth.tar")
     
            
 if __name__ == "__main__":
-    path = f"CNN-LSTM/runs/checkpoint{5}.pth.tar"
+    path = f"CNN-LSTM/runs/checkpoint{3}.pth.tar"
     train(path)
