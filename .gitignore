@@ -4,3 +4,4 @@ runs
 __pycache__
 CNN-LSTM-v1
 VIT-Roberta_example
+CLIP-GPT2/models
