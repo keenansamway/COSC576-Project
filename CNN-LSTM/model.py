@@ -68,7 +68,7 @@ class DecoderLSTM(nn.Module):
         # Fully Connected
         # Input:  (sequence length, batch size, hidden size)
         # Output: (sequence length, batch size, vocab size)
-        
+        '''
         self.fc = nn.Linear(
             in_features=hidden_size, 
             out_features=vocab_size,
@@ -83,7 +83,7 @@ class DecoderLSTM(nn.Module):
             nn.ReLU(),
             nn.Linear(hidden_size*8, vocab_size)
         )
-        '''
+        
     
     def forward(self, features, captions):
         # features: (batch_size, embed_size)
@@ -113,7 +113,7 @@ class DecoderLSTM(nn.Module):
         with torch.no_grad():
             lstm_in = self.embed(start_token)
             
-            features = hiddens
+            features = hiddens.squeeze(0)
             state = torch.stack([features]*(self.num_layers), dim=0)
             states = (state, state)
 
