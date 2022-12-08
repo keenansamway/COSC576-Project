@@ -5,12 +5,7 @@ import pandas as pd
 from PIL import Image
 import torchvision.transforms as transforms
 
-def save_checkpoint(model, optimizer, step, filename):
-    checkpoint = {
-                "state_dict": model.state_dict(),
-                "optimizer": optimizer.state_dict(),
-                "step": step,
-            }
+def save_checkpoint(checkpoint, filename):
     torch.save(checkpoint, filename)
     print("-- Saved Checkpoint --")
     
