@@ -1,0 +1,11 @@
+block_size= 1024
+batch_size = 4
+prefix = "I like this image, but "
+pipe(prefix, max_new_tokens=50, num_return_sequences=5, pad_token_id=50256, num_beams=3)
+
+
+{'generated_text': 'I like this image, but ive been looking at it for a while now. i like the composition, but the light is a bit harsh. i think it could have been better if you would have used a reflector to bring out the shadows on the wall. i like the'},
+ {'generated_text': "I like this image, but ive been trying to figure out what it is. i'm not quite sure what it is, but i like the colors and the composition. good job! i like the colors and the idea. i'm not sure what it is, but i like"},
+ {'generated_text': 'I like this image, but ive been wanting to try something like this for a long time. i like the idea, but i think i would like it better if it were a little sharper. i really like the composition, but the focus seems a bit soft. i think the'},
+ {'generated_text': 'I like this image, but Ã¢Â– iÃ¢Â’m not sure what Ã¢Â– itÃ¢Â’s supposed to beÃ¢Â’. maybe if it were a little more in focus it would be better. i'},
+ {'generated_text': 'I like this image, but ive seen it a few times in the past, but i think it would have been better if you could have gotten closer to the subject. i like the use of negative space, and the dof is good. i would have liked to have seen'}
