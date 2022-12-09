@@ -1,12 +1,32 @@
 block_size = 128
 batch_size = 8
 
+--------------------------------------------------1
 prefix = "I like this image, but "
 pipe(prefix, max_new_tokens=50, num_return_sequences=5, pad_token_id=50256, num_beams=3)
-
 
 {'generated_text': "I like this image, but ive never seen one like this before. great work. good idea, but i think it would have been better with a different background. i don't really like the white background. i like the idea, but the white background is a little distracting."},
  {'generated_text': 'I like this image, but ive never seen it done before. i like the idea, but i think the lighting is a little flat. i like the idea, but the lighting is a bit flat. i like the idea, but i think the lighting is a little flat.'},
  {'generated_text': "I like this image, but ive never seen it before. it's a very interesting image. i think it would have been better if you had cropped out the bright light on the right side of the image. this is a really cool photo. i love the colors and the lighting"},
  {'generated_text': "I like this image, but ive never seen it done before. i'm not sure how you did it, but i like it. i hope you explain how you did it. i'm not sure how you did it, but i like it. i hope you explain how you"},
  {'generated_text': 'I like this image, but ive never seen one like it before. great job. i like the contrast between the red and the blue, but i think it would have been better if it was a little sharper. i like the composition, but the focus seems a bit soft.'}
+
+--------------------------------------------------
+prefix = "I like this image, but "
+output = pipe(prefix, max_new_tokens=50, num_return_sequences=5, pad_token_id=50256, num_beams=5)
+
+{'generated_text': 'I like this image, but ive never seen it before. i like the idea of this photo, but i think it would have been better if it had been taken from a different angle. also, i think it would have been better if you had cropped out the top of the'},
+ {'generated_text': 'I like this image, but ive never seen it in bw. i like the composition and the use of bw. i like the idea, but the image is a little grainy. i like the idea, but i think it would have been better in color. the'},
+ {'generated_text': 'I like this image, but ive never seen one of these before. i would have liked to have seen a bit more detail in the foreground, but still a nice shot. i like the way you have composed this shot. i also like the way you have captured the texture of'},
+ {'generated_text': 'I like this image, but ive never seen one like this before. i like the colors and the composition, but i think it could use a bit of sharpening. i like the colors and the composition, but i think it could use a bit of sharpening. i like'},
+ {'generated_text': "I like this image, but ive never been able to pull it off. nice job. i really like this picture. the colors are great and the composition is very good. the only thing i don't like is the reflection in the water. it's a little distracting. i"}
+
+--------------------------------------------------
+prefix = "I like this image, but "
+output = pipe(prefix, max_new_tokens=50, num_return_sequences=5, pad_token_id=50256, num_beams=15)
+
+{'generated_text': 'I like this image, but ive never been able to get it to look this good. i think this is one of the best photos i have seen in a long time. great job. i like this shot a lot, but i think it would have been better if you had'},
+ {'generated_text': 'I like this image, but ive never seen one like this before. i really like this shot. i think it would have been even better if you could have gotten rid of some of the distracting elements in the background, but other than that, this is a very nice shot.'},
+ {'generated_text': 'I like this image, but ive never seen one like it before. i like the composition and the use of negative space. i think it would have been even better if you could have gotten rid of the shadow on the left side of the image. i think this would have been'},
+ {'generated_text': "I like this image, but ive never seen anything like it before. i like the colors and the composition. the only thing i don't like is the noise in the sky, but that's just me. i like the colors and the composition, but the noise in the sky"},
+ {'generated_text': 'I like this image, but ive never seen one of these before. i really like this shot. i think it would have been even better if you could have gotten a little more light on the left side of the face. i like the idea of this shot, but i think'}
