@@ -1,0 +1,13 @@
+block_size = 128
+batch_size = 8
+
+--------------------------------------------------1
+prefix = "I like this image, but "
+pipe(prefix, max_new_tokens=50, num_return_sequences=5, pad_token_id=50256, num_beams=5)
+
+
+{'generated_text': "I like this image, but ive seen a lot of them. i think this is the best of the lot. i really like the composition and the colors. the only thing i don't like is the border. i think it takes away from the simplicity of the shot. i"},
+ {'generated_text': 'I like this image, but ive seen so many of them now that its starting to get a little boring. this is a nice image. i really like the angle from which you shot this image. i also like the fact that you shot this image in black and white. nice'},
+ {'generated_text': 'I like this image, but ive never been able to pull it off as well as you have here. i love the way the light is hitting the top of the glass, and the way it reflects on the table below. great job. i really like this one. the only'},
+ {'generated_text': 'I like this image, but ive never been able to pull it off. great job. this is a great idea, but i think it would have been better if you could have gotten rid of the shadow in the bottom of the picture. good job though. i like the idea'},
+ {'generated_text': "I like this image, but ive seen so many of them that it's starting to get a little repetitive. i like the composition of this photo, but i'm not sure if i like the sepia effect. i think i would have liked to see it in color. the"}
