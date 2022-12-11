@@ -1,7 +1,7 @@
 import torch
 import torch.nn as nn
-from transformers import GPT2LMHeadModel
-from transformers import CLIPModel
+from transformers import GPT2Model
+from transformers import CLIPVisionModel
 
 
 class MultimodalFusionModel(nn.Module):
@@ -13,8 +13,8 @@ class MultimodalFusionModel(nn.Module):
         self.image_model = image_model
         
         # Pretrained transformers for encoding text and image
-        self.text_encoder = GPT2LMHeadModel.from_pretrained(text_model)
-        self.image_encoder = CLIPModel.from_pretrained(image_model)
+        self.text_encoder = GPT2Model.from_pretrained(text_model)
+        self.image_encoder = CLIPVisionModel.from_pretrained(image_model)
         
         self.fusion = nn.Sequential(
             nn.Linear(self.text_encoder.config.hidden_size + self.image_encoder.config.hidden_size, self.embed_dim),
@@ -37,7 +37,7 @@ class MultimodalFusionModel(nn.Module):
         encoded_images = self.image_encoder(images, return_dict=True)
         
         fused_output = self.fusion(
-            torch.cat([encoded_text['logits']], [encoded_images['pooler_output']], dim=1)
+            torch.cat([encoded_text['last_hidden_states']], [encoded_images['pooler_output']], dim=1)
         )
         
         logits = self.classifier(fused_output)
