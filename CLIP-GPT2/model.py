@@ -1,51 +1,261 @@
+# %%
+import os, sys
+import numpy as np
+import pandas as pd
+from PIL import Image
+from ast import literal_eval
+from dataclasses import dataclass
+from datasets import load_dataset
+
 import torch
 import torch.nn as nn
-from transformers import GPT2Model
-from transformers import CLIPVisionModel
+from transformers import (
+    GPT2Model, GPT2Tokenizer,
+    
+    CLIPVisionModel, CLIPProcessor,
+    
+    TrainingArguments, Trainer,
+    
+    logging, set_seed
+)
+
+
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(device)
+
+if device.type == "cuda":
+    print(torch.cuda.get_device_name(0))
+
+
+dataset = load_dataset(
+    "csv",
+    data_files={
+        "train": "CLIP-GPT2/data/clip-gpt2/train_nolabel.csv",
+        "test": "CLIP-GPT2/data/clip-gpt2/test_nolabel.csv"
+    }
+)
+'''
+dataset = dataset.map(
+    lambda examples: {
+        'label' : [
+            literal_eval(l)
+            for l in examples['label']
+        ]
+    }, batched=True
+)
+'''
+
+#dataset
+
+
+def showExample(id=None):
+    data = dataset["test"]
+    
+    if id is None:
+        id = torch.randint(len(data['image_id']), size=(1,)).item()
+    
+    img = Image.open(os.path.join("datasets/AVA/images", data[id]['image_id']))
+    print("Caption:", data[id]['caption'])
+    #print("Label:", data[id]['label'])
+    #display(img)
+    
+
+
+showExample()
+
+
+@dataclass
+class MyCollator:
+    tokenizer: GPT2Tokenizer
+    processor: CLIPProcessor
+        
+    def tokenize_text(self, texts):
+        eos = self.tokenizer.eos_token
+        texts = [eos + x + eos for x in texts]
+        
+        encoded_text = self.tokenizer(
+            texts,
+            padding="longest",
+            truncation=True,
+            return_tensors="pt",
+            return_attention_mask=True,
+        )
+        return {
+            "input_ids": encoded_text["input_ids"].squeeze(),
+            "attention_mask": encoded_text["attention_mask"].squeeze(),
+        }
+        
+    def process_image(self, images):
+        processed_images = self.processor(
+            images=[Image.open(os.path.join("datasets/AVA/images", image_id)).convert('RGB') for image_id in images],
+            return_tensors="pt",
+            )
+        return {
+            "pixel_values": processed_images["pixel_values"].squeeze(),
+        }
+    
+    def __call__(self, raw_batch_dict):        
+        return {
+            **self.tokenize_text(
+                raw_batch_dict['caption']
+                if isinstance(raw_batch_dict, dict) else
+                [i['caption'] for i in raw_batch_dict]
+            ),
+            **self.process_image(
+                raw_batch_dict['image_id']
+                if isinstance(raw_batch_dict, dict) else
+                [i['image_id'] for i in raw_batch_dict]
+            ),
+            # 'labels': torch.tensor(
+            #     raw_batch_dict['label']
+            #     # if isinstance(raw_batch_dict, dict) else
+            #     # [i['label'] for i in raw_batch_dict]
+            #     , dtype=torch.int64
+            # ),
+        }
 
 
 class MultimodalFusionModel(nn.Module):
-    def __init__(self, text_model, image_model, num_labels, embed_dim=512, dropout=0.1):
+    def __init__(self, text_model, image_model, vocab_size, embed_dim=512, dropout=0.1):
         super().__init__()
         self.embed_dim = embed_dim
-        self.num_labels = num_labels
+        self.vocab_size = vocab_size
         self.text_model = text_model
         self.image_model = image_model
         
         # Pretrained transformers for encoding text and image
-        self.text_encoder = GPT2Model.from_pretrained(text_model)
-        self.image_encoder = CLIPVisionModel.from_pretrained(image_model)
+        with torch.no_grad():
+            self.text_encoder = GPT2Model.from_pretrained(text_model)
+            self.image_encoder = CLIPVisionModel.from_pretrained(image_model)
+                
+        # self.fusion = nn.Sequential(
+        #     nn.Linear(self.text_encoder.config.hidden_size, self.embed_dim),
+        #     nn.ReLU(),
+        #     nn.Dropout(dropout),
+        # )
+        #
+        # self.classifier = nn.Linear(self.embed_dim, self.vocab_size)
+
+        num_features = self.text_encoder.config.hidden_size
         
-        self.fusion = nn.Sequential(
-            nn.Linear(self.text_encoder.config.hidden_size + self.image_encoder.config.hidden_size, self.embed_dim),
+        self.fusiontransformer = nn.Transformer(
+            d_model=num_features,
+            nhead=8,
+            num_encoder_layers=6,
+            num_decoder_layers=6,
+            batch_first=True,
+        )
+        
+        self.ensemble = nn.Sequential(
+            nn.Linear(num_features + num_features, self.vocab_size),
             nn.ReLU(),
             nn.Dropout(dropout),
         )
         
-        self.classifier = nn.Linear(self.embed_dim, self.num_labels)
         
         self.criterion = nn.CrossEntropyLoss()
         
-    def forward(
-        self,
-        captions,
-        images,
-        labels=None,
-    ):
-        encoded_text = self.text_encoder(captions, return_dict=True)
+    def forward(self, 
+                pixel_values : torch.FloatTensor,           # (batch_size, 3, image_size, image_size)
+                input_ids : torch.LongTensor=None,          # (batch_size, sequence_length)
+                attention_mask : torch.LongTensor=None,
+                caption=None, image_id=None):
         
-        encoded_images = self.image_encoder(images, return_dict=True)
+        ## FIGURE OUT INFERENCE
+        if input_ids is None:
+            # If no input_ids are provided -> inference mode, generate caption from SOS
+            input_ids = torch.tensor(50256).unsqueeze(0)
         
-        fused_output = self.fusion(
-            torch.cat([encoded_text['last_hidden_states']], [encoded_images['pooler_output']], dim=1)
+        encoded_text = self.text_encoder(input_ids, attention_mask=attention_mask, return_dict=True)
+        # encoded_text['last_hidden_state']: (batch_size, text_sequence_length, hidden_size=768)
+        
+        encoded_images = self.image_encoder(pixel_values, return_dict=True)
+        # encoded_images['last_hidden_state']: (batch_size, image_sequence_length=50, hidden_size=768)
+                
+        # fused_output = self.fusion(
+        #     torch.cat([encoded_text["last_hidden_state"], encoded_images["pooler_output"].unsqueeze(1)], dim=1)
+        # )
+        
+        fused_output = self.fusiontransformer(
+            encoded_text["last_hidden_state"],
+            encoded_images["last_hidden_state"],
         )
-        
-        logits = self.classifier(fused_output)
-        
+        # fused_output: (batch_size, text_sequence_length, hidden_size=768)
+                
+        logits = self.ensemble(
+            torch.cat([encoded_text["last_hidden_state"], fused_output], dim=2)
+            )
+                
         out = {"logits": logits}
         
-        if labels is not None:
-            loss = self.criterion(logits, labels)
+        loss = None
+        if input_ids is not None:
+            labels = input_ids.clone()
+            # Shift so that tokens < n predict n
+            shift_logits = logits[..., :-1, :].contiguous()
+            shift_labels = labels[..., 1:].contiguous()
+            
+            # Flatten tokens
+            loss = self.criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
+            
+            #loss = self.criterion(logits.view(-1, logits.size(-1)), labels.view(-1))
             out["loss"] = loss
         
         return out
+
+def createCollatorAndModel(text="gpt2", image="openai/clip-vit-base-patch32"):
+    tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+    processor = CLIPProcessor.from_pretrained(image)
+    
+    tokenizer.pad_token = tokenizer.eos_token
+    
+    mycollator = MyCollator(tokenizer=tokenizer, processor=processor)
+    model = MultimodalFusionModel(text, image, tokenizer.vocab_size)
+    
+    return mycollator, model.to(device)
+
+text_model_type = 'CLIP-GPT2/models/gpt2-small-AVA/checkpoint-20500'
+image_model_type = 'openai/clip-vit-base-patch32'
+
+logging.set_verbosity_error()
+mycollator, model = createCollatorAndModel(text=text_model_type, image=image_model_type)
+
+
+args = TrainingArguments(
+    output_dir="CLIP-GPT2/models/clip-gpt2/b32-small",
+    seed=42,
+    evaluation_strategy="steps",
+    eval_steps=1000,
+    logging_strategy="steps",
+    logging_steps=1000,
+    save_strategy="steps",
+    save_steps=1000,
+    save_total_limit=3,
+    per_device_train_batch_size=64,
+    per_device_eval_batch_size=64,
+    num_train_epochs=3,
+    fp16=True,
+    fp16_opt_level="O1",
+    # warmup_ratio=0.01,
+    # leraning_rate=5e-4,
+    # weight_decay=1e-4,
+    # gradient_accumulation_steps=2,
+    dataloader_num_workers=0,
+    load_best_model_at_end=True,
+    disable_tqdm=False,
+    dataloader_pin_memory=True,
+)
+set_seed(42)
+
+trainer = Trainer(
+    model=model,
+    args=args,
+    train_dataset=dataset['train'],
+    eval_dataset=dataset['test'],
+    data_collator=mycollator,
+)
+
+
+if __name__=="__main__":
+    trainer.train()
+
