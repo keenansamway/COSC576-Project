@@ -24,29 +24,20 @@ from transformers import (
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-print(device)
-
-if device.type == "cuda":
-    print(torch.cuda.get_device_name(0))
+# print(device)
+# if device.type == "cuda":
+#     print(torch.cuda.get_device_name(0))
 
 
 dataset = load_dataset(
     "csv",
     data_files={
-        "train": "CLIP-GPT2/data/clip-gpt2/train_nolabel.csv",
-        "test": "CLIP-GPT2/data/clip-gpt2/test_nolabel.csv"
+        "train": "CLIP-GPT2/data/clip-gpt2/train.csv",
+        "validate": "CLIP-GPT2/data/clip-gpt2/validate.csv",
+        "test": "CLIP-GPT2/data/clip-gpt2/test.csv",
     }
 )
-'''
-dataset = dataset.map(
-    lambda examples: {
-        'label' : [
-            literal_eval(l)
-            for l in examples['label']
-        ]
-    }, batched=True
-)
-'''
+
 #dataset
 
 def showExample(id=None):
@@ -59,7 +50,7 @@ def showExample(id=None):
         warnings.simplefilter("ignore")
         img = Image.open(os.path.join("datasets/AVA/images", data[id]['image_id']))
     print("Caption:", data[id]['caption'])
-    #print("Label:", data[id]['label'])
+    print("Image ID:", data[id]['image_id'])
     #display(img)
 
 #showExample()
@@ -102,10 +93,12 @@ class MyCollator:
         }
         
     def process_image(self, images):
-        processed_images = self.processor(
-            images=[Image.open(os.path.join("..", "datasets/AVA/images", image_id)).convert('RGB') for image_id in images],
-            return_tensors="pt",
-            )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            processed_images = self.processor(
+                images=[Image.open(os.path.join("datasets/AVA/images", image_id)).convert('RGB') for image_id in images],
+                return_tensors="pt",
+                )
         return {
             "pixel_values": processed_images["pixel_values"].squeeze(),
         }
@@ -224,12 +217,13 @@ args = TrainingArguments(
     output_dir="CLIP-GPT2/models/clip-gpt2/b32-small",
     seed=42,
     evaluation_strategy="steps",
-    eval_steps=500,
+    eval_steps=5000,
     logging_strategy="steps",
-    logging_steps=500,
+    logging_steps=5000,
     save_strategy="steps",
-    save_steps=500,
+    save_steps=5000,
     save_total_limit=3,
+    metric_for_best_model="eval_loss",
     per_device_train_batch_size=32,
     per_device_eval_batch_size=32,
     num_train_epochs=3,
@@ -239,7 +233,7 @@ args = TrainingArguments(
     # leraning_rate=5e-4,
     # weight_decay=1e-4,
     # gradient_accumulation_steps=2,
-    dataloader_num_workers=2,
+    dataloader_num_workers=4,
     load_best_model_at_end=True,
     disable_tqdm=False,
     dataloader_pin_memory=True,
@@ -255,7 +249,7 @@ trainer = MyTrainer(
     model=model,
     args=args,
     train_dataset=dataset['train'],
-    eval_dataset=dataset['test'],
+    eval_dataset=dataset['validate'],
     data_collator=mycollator,
 )
 
