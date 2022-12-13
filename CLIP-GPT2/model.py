@@ -1,11 +1,14 @@
 # %%
 import os, sys
+import warnings
 import numpy as np
 import pandas as pd
 from PIL import Image
 from ast import literal_eval
+import datasets
 from dataclasses import dataclass
 from datasets import load_dataset
+from typing import Dict, List, Optional, Tuple
 
 import torch
 import torch.nn as nn
@@ -44,9 +47,7 @@ dataset = dataset.map(
     }, batched=True
 )
 '''
-
 #dataset
-
 
 def showExample(id=None):
     data = dataset["test"]
@@ -54,14 +55,14 @@ def showExample(id=None):
     if id is None:
         id = torch.randint(len(data['image_id']), size=(1,)).item()
     
-    img = Image.open(os.path.join("datasets/AVA/images", data[id]['image_id']))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        img = Image.open(os.path.join("datasets/AVA/images", data[id]['image_id']))
     print("Caption:", data[id]['caption'])
     #print("Label:", data[id]['label'])
     #display(img)
-    
 
-
-showExample()
+#showExample()
 
 
 @dataclass
@@ -85,9 +86,24 @@ class MyCollator:
             "attention_mask": encoded_text["attention_mask"].squeeze(),
         }
         
+    def tokenize_labels(self, labels):
+        eos = self.tokenizer.eos_token
+        labels = [eos + x + eos for x in labels]
+        
+        encoded_labels = self.tokenizer(
+            labels,
+            padding="longest",
+            truncation=True,
+            return_tensors="pt",
+            return_attention_mask=False,
+        )
+        return {
+            "labels": encoded_labels["input_ids"].squeeze(),
+        }
+        
     def process_image(self, images):
         processed_images = self.processor(
-            images=[Image.open(os.path.join("datasets/AVA/images", image_id)).convert('RGB') for image_id in images],
+            images=[Image.open(os.path.join("..", "datasets/AVA/images", image_id)).convert('RGB') for image_id in images],
             return_tensors="pt",
             )
         return {
@@ -106,12 +122,11 @@ class MyCollator:
                 if isinstance(raw_batch_dict, dict) else
                 [i['image_id'] for i in raw_batch_dict]
             ),
-            # 'labels': torch.tensor(
-            #     raw_batch_dict['label']
-            #     # if isinstance(raw_batch_dict, dict) else
-            #     # [i['label'] for i in raw_batch_dict]
-            #     , dtype=torch.int64
-            # ),
+            **self.tokenize_labels(
+                raw_batch_dict['caption']
+                if isinstance(raw_batch_dict, dict) else
+                [i['caption'] for i in raw_batch_dict]
+            ),
         }
 
 
@@ -127,15 +142,7 @@ class MultimodalFusionModel(nn.Module):
         with torch.no_grad():
             self.text_encoder = GPT2Model.from_pretrained(text_model)
             self.image_encoder = CLIPVisionModel.from_pretrained(image_model)
-                
-        # self.fusion = nn.Sequential(
-        #     nn.Linear(self.text_encoder.config.hidden_size, self.embed_dim),
-        #     nn.ReLU(),
-        #     nn.Dropout(dropout),
-        # )
-        #
-        # self.classifier = nn.Linear(self.embed_dim, self.vocab_size)
-
+        
         num_features = self.text_encoder.config.hidden_size
         
         self.fusiontransformer = nn.Transformer(
@@ -158,47 +165,39 @@ class MultimodalFusionModel(nn.Module):
     def forward(self, 
                 pixel_values : torch.FloatTensor,           # (batch_size, 3, image_size, image_size)
                 input_ids : torch.LongTensor=None,          # (batch_size, sequence_length)
-                attention_mask : torch.LongTensor=None,
-                caption=None, image_id=None):
+                labels : torch.LongTensor=None,             # (batch_size, sequence_length)
+                attention_mask : torch.LongTensor=None):
         
-        ## FIGURE OUT INFERENCE
         if input_ids is None:
-            # If no input_ids are provided -> inference mode, generate caption from SOS
-            input_ids = torch.tensor(50256).unsqueeze(0)
-        
-        encoded_text = self.text_encoder(input_ids, attention_mask=attention_mask, return_dict=True)
+            # Set initial input to SOS token (50256 <==> "<|endoftext|>")
+            input_ids = torch.tensor([[50256]])
+            
         # encoded_text['last_hidden_state']: (batch_size, text_sequence_length, hidden_size=768)
-        
-        encoded_images = self.image_encoder(pixel_values, return_dict=True)
         # encoded_images['last_hidden_state']: (batch_size, image_sequence_length=50, hidden_size=768)
-                
-        # fused_output = self.fusion(
-        #     torch.cat([encoded_text["last_hidden_state"], encoded_images["pooler_output"].unsqueeze(1)], dim=1)
-        # )
+        encoded_text = self.text_encoder(input_ids, attention_mask=attention_mask, return_dict=True)            
+        encoded_images = self.image_encoder(pixel_values, return_dict=True)
         
-        fused_output = self.fusiontransformer(
-            encoded_text["last_hidden_state"],
-            encoded_images["last_hidden_state"],
-        )
         # fused_output: (batch_size, text_sequence_length, hidden_size=768)
-                
+        fused_output = self.fusiontransformer(
+            encoded_images["last_hidden_state"],
+            encoded_text["last_hidden_state"],
+        )
+        
+        # logits: (batch_size, text_sequence_length, vocab_size)     
         logits = self.ensemble(
             torch.cat([encoded_text["last_hidden_state"], fused_output], dim=2)
             )
                 
         out = {"logits": logits}
         
-        loss = None
-        if input_ids is not None:
-            labels = input_ids.clone()
-            # Shift so that tokens < n predict n
+        if labels is not None:                
+            # Shift so that tokens n-1 predicts n
             shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
             
-            # Flatten tokens
+            # Flatten tokens and calculate loss
             loss = self.criterion(shift_logits.view(-1, shift_logits.size(-1)), shift_labels.view(-1))
             
-            #loss = self.criterion(logits.view(-1, logits.size(-1)), labels.view(-1))
             out["loss"] = loss
         
         return out
@@ -225,14 +224,14 @@ args = TrainingArguments(
     output_dir="CLIP-GPT2/models/clip-gpt2/b32-small",
     seed=42,
     evaluation_strategy="steps",
-    eval_steps=1000,
+    eval_steps=500,
     logging_strategy="steps",
-    logging_steps=1000,
+    logging_steps=500,
     save_strategy="steps",
-    save_steps=1000,
+    save_steps=500,
     save_total_limit=3,
-    per_device_train_batch_size=64,
-    per_device_eval_batch_size=64,
+    per_device_train_batch_size=32,
+    per_device_eval_batch_size=32,
     num_train_epochs=3,
     fp16=True,
     fp16_opt_level="O1",
@@ -240,14 +239,19 @@ args = TrainingArguments(
     # leraning_rate=5e-4,
     # weight_decay=1e-4,
     # gradient_accumulation_steps=2,
-    dataloader_num_workers=0,
+    dataloader_num_workers=2,
     load_best_model_at_end=True,
     disable_tqdm=False,
     dataloader_pin_memory=True,
 )
 set_seed(42)
 
-trainer = Trainer(
+class MyTrainer(Trainer):
+    def _remove_unused_columns(self, dataset: "datasets.Dataset", description: Optional[str] = None):
+        # Ignore _remove_unused_columns
+        return dataset
+
+trainer = MyTrainer(
     model=model,
     args=args,
     train_dataset=dataset['train'],
