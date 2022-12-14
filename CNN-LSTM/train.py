@@ -41,14 +41,14 @@ def train(path):
     save_every_x_steps = 5000
     
     load_model = False
-    save_model = True
+    save_model = False
     train_CNN = False
     # True False
     
     #dataset_to_use = "PCCD"
-    #dataset_to_use = "flickr8k"
+    dataset_to_use = "flickr8k"
     #dataset_to_use = "flickr30k"
-    dataset_to_use = "AVA"
+    #dataset_to_use = "AVA"
     
     if dataset_to_use == "PCCD":
         imgs_folder = "datasets/PCCD/images/full"
