@@ -28,7 +28,7 @@ from mycollator import MyCollator
 
 
 logging.set_verbosity_error()
-set_seed(42)
+set_seed(1234)
 
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # print(device)
@@ -94,14 +94,26 @@ if __name__=="__main__":
         }
     )
     
-    #text_model_type = 'gpt2'
-    text_model_type = 'CLIP-GPT2/models/gpt2-small-AVA/checkpoint-20500'
-    image_model_type = 'openai/clip-vit-base-patch32'
+    text_model_type = 'gpt2'
+    #text_model_type = 'CLIP-GPT2/models/gpt2-small-AVA/checkpoint-20500'
+    image_model_type = 'openai/clip-vit-base-patch16'
 
     mycollator, model = createCollatorAndModel(text=text_model_type, image=image_model_type)
     
+    # Freeze / Unfreeze GPT2
+    for param in model.text_encoder.parameters():
+            param.requires_grad = False
+    
+    # Freeze / Unfreeze CLIP
+    for param in model.image_encoder.parameters():
+            param.requires_grad = True
+            
+    # Freeze / Unfreeze GPT2 Linear Projection
+    model.project_textencoder[0].weight.requires_grad = False
+    
+    
     args = TrainingArguments(
-        output_dir="CLIP-GPT2/models/clip-gpt2/b32-small",
+        output_dir="CLIP-GPT2/models/clip-gpt2/b16-small",
         seed=42,
         evaluation_strategy="steps",
         eval_steps=5000,
@@ -122,26 +134,20 @@ if __name__=="__main__":
         # weight_decay=1e-4,
         # gradient_accumulation_steps=2,
         dataloader_num_workers=8,
-        load_best_model_at_end=True,
+        #load_best_model_at_end=True,
         disable_tqdm=False,
         dataloader_pin_memory=True,
-        ignore_data_skip=True,
+        ignore_data_skip=False,
     )
     
     trainer = MyTrainer(
         model=model,
         args=args,
         train_dataset=dataset['train'],
-        eval_dataset=dataset['validate'],
+        eval_dataset=dataset['validate'], 
         data_collator=mycollator,
     )
     
     trainer.train()
-    #trainer.train(resume_from_checkpoint="CLIP-GPT2/models/clip-gpt2/b32-small/checkpoint-120000")
-    
-    # Final save
-    trainer.save_metrics()
-    trainer.save_model()
-    trainer.save_state()
-    
+    #trainer.train(resume_from_checkpoint="CLIP-GPT2/models/clip-gpt2/b16-small/checkpoint-10000")
     
